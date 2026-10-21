@@ -3,179 +3,230 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
 <title>Job Applications</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f7f6f2;
-    --card:#ffffff;
-    --border:#e5e3dc;
-    --text:#1f1e1c;
-    --muted:#6b6a64;
-    --accent:#2f6fed;
-    --danger:#c94b4b;
-    --sent-bg:#eaf1ff;
-    --sent-text:#2f6fed;
-    --wait-bg:#fff4e0;
-    --wait-text:#a86a00;
-    --int-bg:#e9f8ee;
-    --int-text:#1f8a4c;
-    --off-bg:#f3eaff;
-    --off-text:#7a3fd6;
-    --rej-bg:#fbeaea;
-    --rej-text:#c94b4b;
+    --ground:#edf0eb;
+    --ink:#15282d;
+    --muted:#55666b;
+    --line:#cbd4cd;
+    --paper:#ffffff;
+    --sent:#2a6f8f;
+    --waiting:#8a5c0a;
+    --interview:#286f43;
+    --offer:#8e3b78;
+    --rejected:#a8412f;
+    --sans:"Barlow","Segoe UI",system-ui,-apple-system,sans-serif;
+    --cond:"Barlow Condensed","Arial Narrow","Roboto Condensed",sans-serif;
   }
   *{box-sizing:border-box;}
+  [hidden]{display:none !important;}
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:var(--bg);
-    color:var(--text);
+    font-family:var(--sans);
+    font-size:15px;
+    line-height:1.4;
+    background:var(--ground);
+    color:var(--ink);
     margin:0;
-    padding:28px 14px;
+    padding:44px 20px 72px;
   }
-  .wrap{max-width:1020px;margin:0 auto;}
+  .wrap{max-width:1040px;margin:0 auto;}
+
+  /* Header */
   .header{
     display:flex;
     justify-content:space-between;
-    align-items:center;
-    margin-bottom:18px;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+    margin-bottom:26px;
   }
-  h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-0.01em;}
-  button.add{
-    background:var(--text);
-    color:#fff;
-    border:none;
-    border-radius:8px;
-    padding:10px 16px;
-    font-size:14px;
-    font-weight:500;
+  h1{
+    font-family:var(--cond);
+    font-size:clamp(38px,6vw,58px);
+    font-weight:700;
+    line-height:0.95;
+    letter-spacing:0.005em;
+    margin:0;
+  }
+  .summary{margin:10px 0 0;color:var(--muted);font-size:15px;}
+  .actions{display:flex;gap:8px;}
+  .btn{
+    font:600 14.5px/1 var(--sans);
+    border-radius:6px;
+    padding:11px 18px;
     cursor:pointer;
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:var(--ground);
+    transition:background-color .15s,color .15s,border-color .15s;
   }
-  button.add.ghost{
-    background:none;
-    color:var(--muted);
-    border:1px solid var(--border);
-  }
-  .stats{
-    display:grid;
-    grid-template-columns:repeat(5,minmax(0,1fr));
-    gap:10px;
-    margin-bottom:18px;
-  }
-  .stat{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:12px;
-    padding:14px 16px;
-  }
-  .stat .label{font-size:12px;color:var(--muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;}
-  .stat .value{font-size:22px;font-weight:700;line-height:1;}
-  .table-card{
-    background:var(--card);
-    border:1px solid var(--border);
-    border-radius:12px;
+  .btn:hover{background:#0d1b1f;}
+  .btn.quiet{background:transparent;color:var(--ink);border-color:var(--line);}
+  .btn.quiet:hover{border-color:var(--ink);}
+  .btn.quiet:disabled{color:var(--muted);border-color:var(--line);opacity:.55;cursor:default;}
+  .btn:focus-visible,
+  .del:focus-visible,
+  select.status:focus-visible{outline:2px solid var(--sent);outline-offset:2px;}
+
+  /* Status bar */
+  .pipeline{margin-bottom:30px;}
+  .bar{
+    height:12px;
+    border-radius:3px;
     overflow:hidden;
+    background:var(--line);
   }
-  table{width:100%;border-collapse:collapse;font-size:13.5px;}
-  thead th{
+  .bar-inner{display:flex;width:calc(100% + 3px);height:100%;}
+  .seg{
+    flex:0 1 0;
+    min-width:0;
+    background:var(--c);
+    box-shadow:inset -3px 0 0 var(--ground);
+    transition:flex-grow .35s ease;
+  }
+  .key{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px 24px;
+    margin:12px 0 0;
+    padding:0;
+    list-style:none;
+    font-size:14px;
+  }
+  .key li{display:inline-flex;align-items:center;gap:7px;}
+  .key li::before{
+    content:"";
+    width:9px;height:9px;
+    border-radius:50%;
+    background:var(--c);
+  }
+  .key b{font-weight:600;font-variant-numeric:tabular-nums;}
+
+  .st-Sent{--c:var(--sent);}
+  .st-Waiting{--c:var(--waiting);}
+  .st-Interview{--c:var(--interview);}
+  .st-Offer{--c:var(--offer);}
+  .st-Rejected{--c:var(--rejected);}
+
+  /* Table */
+  .grid{
+    width:100%;
+    border-collapse:collapse;
+    border-top:2px solid var(--ink);
+    font-size:14.5px;
+  }
+  .grid thead th{
     text-align:left;
-    font-weight:600;
+    font-weight:500;
+    font-size:13px;
     color:var(--muted);
-    font-size:12px;
-    padding:10px 12px;
-    border-bottom:1px solid var(--border);
+    padding:11px 16px 11px 0;
+    border-bottom:1px solid var(--line);
     white-space:nowrap;
-    background:var(--card);
-    text-transform:uppercase;
-    letter-spacing:0.03em;
   }
-  tbody tr{border-bottom:1px solid var(--border);transition:background 0.15s;}
-  tbody tr:last-child{border-bottom:none;}
-  tbody tr:hover{background:#fcfbfa;}
-  td{padding:10px 12px;vertical-align:top;}
-  td.num{color:var(--muted);width:28px;font-size:12px;}
-  td.company{font-weight:600;min-width:170px;font-size:13.5px;}
-  td.position{min-width:180px;line-height:1.35;}
-  td.date{min-width:132px;}
-  td.notes{color:var(--muted);max-width:220px;line-height:1.35;font-size:12.5px;}
-  td.action{width:32px;text-align:center;}
+  .grid tbody tr{border-bottom:1px solid var(--line);}
+  .grid td{padding:15px 16px 15px 0;vertical-align:top;}
+  .grid td:last-child,
+  .grid thead th:last-child{padding-right:0;}
+  .grid td.company{min-width:170px;font-weight:600;font-size:15px;}
+  .grid td.position{min-width:180px;line-height:1.35;}
+  .grid td.date{min-width:132px;}
+  .grid td.status-cell{min-width:112px;}
+  .grid td.notes{color:var(--muted);max-width:240px;line-height:1.35;font-size:13.5px;}
+  .grid td.action{width:34px;text-align:right;}
 
   [contenteditable="true"]{
     outline:none;
-    border-radius:6px;
+    border-radius:4px;
     padding:2px 5px;
     margin:-2px -5px;
     display:inline-block;
     min-width:10px;
+    transition:background-color .12s;
   }
-  [contenteditable="true"]:hover{background:#f1f0ec;}
-  [contenteditable="true"]:focus{background:#fff;box-shadow:0 0 0 2px var(--accent);}
+  [contenteditable="true"]:hover{background:rgba(255,255,255,.75);}
+  [contenteditable="true"]:focus{background:var(--paper);box-shadow:0 0 0 2px var(--sent);}
 
-  /* Date + days ago - CLEAN VERSION */
-  .date-wrap{
-    display:flex;
-    flex-direction:column;
-    gap:2px;
-  }
+  .date-wrap{display:flex;flex-direction:column;gap:2px;}
   .date-main{
     font-weight:500;
-    color:var(--text);
-    font-size:13px;
+    font-size:14px;
     line-height:1.2;
     font-variant-numeric:tabular-nums;
   }
   .date-main.empty{color:var(--muted);font-weight:400;}
   .days-ago{
-    font-size:11px;
+    font-size:12.5px;
     line-height:1.2;
-    font-weight:500;
     color:var(--muted);
     font-variant-numeric:tabular-nums;
-    display:flex;
-    align-items:center;
-    gap:4px;
   }
-  .days-ago::before{
+  .days-ago.is-today{color:var(--interview);font-weight:500;}
+  .days-ago.is-old{color:var(--waiting);}
+  .days-ago.is-very-old{color:var(--rejected);}
+  .days-ago.is-future{color:var(--sent);}
+
+  /* Status picker */
+  .status-wrap{
+    display:inline-flex;
+    align-items:center;
+    color:var(--c);
+  }
+  .status-wrap::before{
     content:"";
-    width:3px;
-    height:3px;
+    width:8px;height:8px;
     border-radius:50%;
     background:currentColor;
-    opacity:0.5;
-    display:inline-block;
+    margin-right:7px;
+    flex:none;
   }
-  .days-ago.is-today{color:var(--int-text);}
-  .days-ago.is-today::before{opacity:1;background:var(--int-text);}
-  .days-ago.is-old{color:var(--wait-text);}
-  .days-ago.is-very-old{color:var(--rej-text);}
-  .days-ago.is-future{color:var(--sent-text);}
-
+  .status-wrap::after{
+    content:"";
+    width:5px;height:5px;
+    border-right:1.5px solid currentColor;
+    border-bottom:1.5px solid currentColor;
+    transform:rotate(45deg) translateY(-1px);
+    margin-left:7px;
+    opacity:.65;
+    pointer-events:none;
+  }
   select.status{
-    font-size:12px;
-    font-weight:600;
-    border-radius:999px;
-    padding:5px 10px;
-    border:none;
-    cursor:pointer;
     appearance:none;
-    line-height:1;
-  }
-  select.status.Sent{background-color:var(--sent-bg);color:var(--sent-text);}
-  select.status.Waiting{background-color:var(--wait-bg);color:var(--wait-text);}
-  select.status.Interview{background-color:var(--int-bg);color:var(--int-text);}
-  select.status.Offer{background-color:var(--off-bg);color:var(--off-text);}
-  select.status.Rejected{background-color:var(--rej-bg);color:var(--rej-text);}
-
-  .del-btn{
-    background:none;
-    border:none;
+    -webkit-appearance:none;
+    background:transparent;
+    border:0;
+    border-radius:4px;
+    color:inherit;
+    font:600 14.5px var(--sans);
+    padding:3px 0;
     cursor:pointer;
-    color:var(--muted);
-    font-size:14px;
-    padding:4px 6px;
-    border-radius:6px;
   }
-  .del-btn:hover{background:#f1f0ec;color:var(--danger);}
+  select.status option{color:var(--ink);font-weight:400;}
 
+  .del{
+    background:none;
+    border:0;
+    border-radius:4px;
+    color:var(--muted);
+    font-size:16px;
+    line-height:1;
+    padding:6px 8px;
+    margin:-4px -8px -4px 0;
+    cursor:pointer;
+    opacity:.45;
+    transition:opacity .12s,color .12s;
+  }
+  .grid tbody tr:hover .del,
+  .del:hover,
+  .del:focus-visible{opacity:1;}
+  .del:hover{color:var(--rejected);}
+
+  /* Rejected rows get struck through by hand */
   tr.rejected td.company,
   tr.rejected td.position{color:var(--muted);}
   tr.rejected .scratch-wrap{position:relative;display:inline-block;}
@@ -186,79 +237,126 @@
     left:-3%;
     width:106%;
     height:1.5px;
-    background:var(--danger);
+    background:var(--rejected);
     top:50%;
+    pointer-events:none;
   }
   tr.rejected .scratch-wrap::before{transform:translateY(-50%) rotate(-2.5deg);}
-  tr.rejected .scratch-wrap::after{transform:translateY(-50%) rotate(1.5deg);top:55%;}
+  tr.rejected .scratch-wrap::after{transform:translateY(-50%) rotate(1.5deg);top:56%;}
   tr.rejected td.date,
-  tr.rejected td.notes{opacity:0.6;}
-  tr.rejected{background:#fdfaf9;}
+  tr.rejected td.notes{opacity:.65;}
 
-  .footnote{font-size:11px;color:var(--muted);margin-top:12px;text-align:center;}
-  @media(max-width:720px){
-    .stats{grid-template-columns:repeat(3,1fr);}
-    body{padding:16px 10px;}
+  /* Empty state */
+  .empty-state{
+    border-top:2px solid var(--ink);
+    padding:44px 0 12px;
+  }
+  .empty-state h2{
+    font-family:var(--cond);
+    font-size:32px;
+    font-weight:700;
+    line-height:1;
+    margin:0 0 10px;
+  }
+  .empty-state p{margin:0 0 22px;max-width:46ch;color:var(--muted);line-height:1.5;}
+
+  .footnote{font-size:13px;color:var(--muted);margin-top:16px;}
+
+  @media (max-width:760px){
+    body{padding:26px 16px 56px;}
+    .grid,.grid tbody{display:block;}
+    .grid thead{display:none;}
+    .grid tbody tr{
+      display:grid;
+      grid-template-columns:1fr auto;
+      grid-template-areas:
+        "company action"
+        "position position"
+        "date status"
+        "notes notes";
+      gap:5px 12px;
+      padding:15px 0;
+    }
+    .grid td{display:block;padding:0;}
+    .grid td.company,
+    .grid td.position,
+    .grid td.date,
+    .grid td.status-cell,
+    .grid td.notes,
+    .grid td.action{min-width:0;max-width:none;width:auto;}
+    .grid td.company{grid-area:company;}
+    .grid td.position{grid-area:position;}
+    .grid td.date{grid-area:date;}
+    .grid td.status-cell{grid-area:status;justify-self:end;align-self:start;}
+    .grid td.notes{grid-area:notes;}
+    .grid td.action{grid-area:action;}
+    .del{opacity:.7;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;}
   }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="header">
-    <h1>Job applications</h1>
-    <div style="display:flex;gap:8px;">
-      <button class="add ghost" onclick="resetData()">Reset</button>
-      <button class="add" onclick="addRow()">+ Add application</button>
+    <div>
+      <h1>Job applications</h1>
+      <p class="summary" id="summary">Nothing tracked yet</p>
+    </div>
+    <div class="actions">
+      <button class="btn quiet" id="clear-btn" onclick="clearAll()">Clear all</button>
+      <button class="btn" onclick="addRow()">Add application</button>
     </div>
   </div>
 
-  <div class="stats">
-    <div class="stat"><div class="label">Total</div><div class="value" id="stat-total">0</div></div>
-    <div class="stat"><div class="label">Sent</div><div class="value" id="stat-sent">0</div></div>
-    <div class="stat"><div class="label">Interview</div><div class="value" id="stat-interview">0</div></div>
-    <div class="stat"><div class="label">Offer</div><div class="value" id="stat-offer">0</div></div>
-    <div class="stat"><div class="label">Rejected</div><div class="value" id="stat-rejected">0</div></div>
+  <div class="pipeline">
+    <div class="bar" role="img" aria-label="Applications by status">
+      <div class="bar-inner">
+        <div class="seg st-Sent" id="seg-Sent"></div>
+        <div class="seg st-Waiting" id="seg-Waiting"></div>
+        <div class="seg st-Interview" id="seg-Interview"></div>
+        <div class="seg st-Offer" id="seg-Offer"></div>
+        <div class="seg st-Rejected" id="seg-Rejected"></div>
+      </div>
+    </div>
+    <ul class="key">
+      <li class="st-Sent">Sent <b id="count-Sent">0</b></li>
+      <li class="st-Waiting">Waiting <b id="count-Waiting">0</b></li>
+      <li class="st-Interview">Interview <b id="count-Interview">0</b></li>
+      <li class="st-Offer">Offer <b id="count-Offer">0</b></li>
+      <li class="st-Rejected">Rejected <b id="count-Rejected">0</b></li>
+    </ul>
   </div>
 
-  <div class="table-card">
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Company</th>
-          <th>Position</th>
-          <th>Date sent</th>
-          <th>Status</th>
-          <th>Notes</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+  <table class="grid" id="grid" hidden>
+    <thead>
+      <tr>
+        <th>Company</th>
+        <th>Position</th>
+        <th>Date sent</th>
+        <th>Status</th>
+        <th>Notes</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <div class="empty-state" id="empty">
+    <h2>No applications yet</h2>
+    <p>Add your first one. Each row keeps the company, the role, the date you sent it and where it stands.</p>
+    <button class="btn" onclick="addRow()">Add application</button>
   </div>
 
-  <div class="footnote">Click any cell to edit · days ago auto-calculates from today · replaces old file to keep your 12 jobs</div>
+  <div class="footnote" id="footnote" hidden>Click any cell to edit. Days since sent update automatically.</div>
 </div>
 
 <script>
 const STATUSES = ["Sent","Waiting","Interview","Offer","Rejected"];
 const STORAGE_KEY = "job-tracker-data";
 
-// FULL 12 DATA FROM YOUR SCREENSHOT
-const defaultData = [
-  {company:"PT SEZ Gama Cendekia", position:"Perencana Kawasan", date:"2026-06-08", status:"Rejected", notes:"Via email - hrptsgc@gm..."},
-  {company:"GISACT", position:"Geospatial Data Engineer", date:"2026-06-14", status:"Rejected", notes:"Via gisact.io/careers - C..."},
-  {company:"TruCarbon", position:"GIS Specialist", date:"2026-06-15", status:"Rejected", notes:"WA reply: will contact if ..."},
-  {company:"ATR/BPN (World Bank ILASPP)", position:"Spatial Data Monitoring Officer", date:"2026-06-22", status:"Rejected", notes:"EOI via reoiilapps.atrbp..."},
-  {company:"Pertamina Hulu Rokan", position:"Intern Supply Chain Management", date:"", status:"Rejected", notes:"Portal profile in progres..."},
-  {company:"PT Amara Cisadane (AMC)", position:"Staf Teknis Bidang Peta", date:"2026-07-03", status:"Sent", notes:"Via email - hrd@amaraci..."},
-  {company:"Haldin Natural", position:"GIS Operator & Admin", date:"2026-07-09", status:"Sent", notes:"Via email - career@haldi..."},
-  {company:"Pertamina Digital Hub", position:"Digital Technical Intern", date:"2026-07-04", status:"Sent", notes:"Via company site"},
-  {company:"Daemeter", position:"GIS & Remote Sensing Specialist", date:"2026-07-11", status:"Sent", notes:"Via company site/form"},
-  {company:"CarbonEthics", position:"Gis Specialist", date:"2026-07-13", status:"Sent", notes:"Via company google form"},
-  {company:"Mineral Alam Abadi", position:"Land Acquisition Foreman", date:"2026-07-14", status:"Sent", notes:"Via company site/respond sent via email"},
-  {company:"Mineral Alam Abadi", position:"Land & GIS Database Foreman", date:"2026-07-14", status:"Sent", notes:"Via company site/respond sent via email"}
-];
+const defaultData = [];
 
 function loadData(){
   try{
@@ -305,13 +403,12 @@ function render(){
     const dateText=row.date||'—';
     const emptyCls=row.date?'':' empty';
     tr.innerHTML=`
-      <td class="num">${i+1}</td>
-      <td class="company"><span class="scratch-wrap"><span contenteditable="true" data-field="company" data-i="${i}">${esc(row.company)}</span></span></td>
-      <td class="position"><span class="scratch-wrap"><span contenteditable="true" data-field="position" data-i="${i}">${esc(row.position)}</span></span></td>
-      <td class="date"><div class="date-wrap"><span class="date-main${emptyCls}" contenteditable="true" data-field="date" data-i="${i}">${esc(dateText)}</span>${daysHtml}</div></td>
-      <td><select class="status ${row.status}" data-i="${i}">${STATUSES.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}</select></td>
-      <td class="notes"><span contenteditable="true" data-field="notes" data-i="${i}">${esc(row.notes)}</span></td>
-      <td class="action"><button class="del-btn" data-i="${i}">✕</button></td>`;
+      <td class="company"><span class="scratch-wrap"><span contenteditable="true" aria-label="Company" data-field="company" data-i="${i}">${esc(row.company)}</span></span></td>
+      <td class="position"><span class="scratch-wrap"><span contenteditable="true" aria-label="Position" data-field="position" data-i="${i}">${esc(row.position)}</span></span></td>
+      <td class="date"><div class="date-wrap"><span class="date-main${emptyCls}" contenteditable="true" aria-label="Date sent" data-field="date" data-i="${i}">${esc(dateText)}</span>${daysHtml}</div></td>
+      <td class="status-cell"><span class="status-wrap st-${row.status}"><select class="status" aria-label="Status" data-i="${i}">${STATUSES.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}</select></span></td>
+      <td class="notes"><span contenteditable="true" aria-label="Notes" data-field="notes" data-i="${i}">${esc(row.notes)}</span></td>
+      <td class="action"><button class="del" aria-label="Delete application" data-i="${i}">✕</button></td>`;
     tbody.appendChild(tr);
   });
 
@@ -324,20 +421,34 @@ function render(){
   tbody.querySelectorAll('select.status').forEach(sel=>{
     sel.addEventListener('change',()=>{ data[+sel.dataset.i].status=sel.value; saveData(); render(); });
   });
-  tbody.querySelectorAll('.del-btn').forEach(btn=>{
+  tbody.querySelectorAll('.del').forEach(btn=>{
     btn.addEventListener('click',()=>{ data.splice(+btn.dataset.i,1); saveData(); render(); });
   });
   updateStats();
 }
+
 function updateStats(){
-  document.getElementById('stat-total').textContent=data.length;
-  document.getElementById('stat-sent').textContent=data.filter(r=>r.status==='Sent').length;
-  document.getElementById('stat-interview').textContent=data.filter(r=>r.status==='Interview').length;
-  document.getElementById('stat-offer').textContent=data.filter(r=>r.status==='Offer').length;
-  document.getElementById('stat-rejected').textContent=data.filter(r=>r.status==='Rejected').length;
+  const total=data.length;
+  document.getElementById('summary').textContent = total===0
+    ? 'Nothing tracked yet'
+    : `${total} ${total===1?'application':'applications'} tracked`;
+  STATUSES.forEach(s=>{
+    const n=data.filter(r=>r.status===s).length;
+    document.getElementById('count-'+s).textContent=n;
+    document.getElementById('seg-'+s).style.flexGrow=n;
+  });
+  document.getElementById('grid').hidden = total===0;
+  document.getElementById('empty').hidden = total!==0;
+  document.getElementById('footnote').hidden = total===0;
+  document.getElementById('clear-btn').disabled = total===0;
 }
+
 function addRow(){ data.push({company:"New company",position:"Position",date:getTodayString(),status:"Sent",notes:""}); saveData(); render(); }
-function resetData(){ if(confirm("Reset to 12 jobs? This clears localStorage.")){ data=JSON.parse(JSON.stringify(defaultData)); saveData(); render(); } }
+function clearAll(){
+  if(confirm("Clear all applications? This removes everything saved in this browser.")){
+    data=[]; saveData(); render();
+  }
+}
 render();
 </script>
 </body>
