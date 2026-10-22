@@ -246,6 +246,58 @@
   tr.rejected td.date,
   tr.rejected td.notes{opacity:.65;}
 
+  /* Attached PDFs */
+  .grid td.files{min-width:150px;max-width:210px;}
+  .files-wrap{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .file{
+    display:inline-flex;
+    align-items:center;
+    max-width:100%;
+    border:1px solid var(--line);
+    border-radius:5px;
+    background:var(--paper);
+  }
+  .file-open{
+    font:500 13px/1.2 var(--sans);
+    color:var(--ink);
+    background:none;
+    border:0;
+    padding:5px 4px 5px 8px;
+    cursor:pointer;
+    max-width:150px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    text-align:left;
+  }
+  .file-open:hover{color:var(--sent);text-decoration:underline;}
+  .file-del{
+    background:none;
+    border:0;
+    color:var(--muted);
+    font-size:12px;
+    line-height:1;
+    padding:6px 7px 6px 3px;
+    cursor:pointer;
+    opacity:.5;
+    transition:opacity .12s,color .12s;
+  }
+  .file-del:hover{color:var(--rejected);opacity:1;}
+  .attach{
+    font:600 12.5px/1 var(--sans);
+    color:var(--muted);
+    background:transparent;
+    border:1px dashed var(--line);
+    border-radius:5px;
+    padding:6px 9px;
+    cursor:pointer;
+    transition:color .12s,border-color .12s;
+  }
+  .attach:hover{color:var(--ink);border-color:var(--ink);}
+  .file-open:focus-visible,
+  .file-del:focus-visible,
+  .attach:focus-visible{outline:2px solid var(--sent);outline-offset:2px;}
+
   /* Empty state */
   .empty-state{
     border-top:2px solid var(--ink);
@@ -273,7 +325,8 @@
         "company action"
         "position position"
         "date status"
-        "notes notes";
+        "notes notes"
+        "files files";
       gap:5px 12px;
       padding:15px 0;
     }
@@ -283,7 +336,9 @@
     .grid td.date,
     .grid td.status-cell,
     .grid td.notes,
+    .grid td.files,
     .grid td.action{min-width:0;max-width:none;width:auto;}
+    .grid td.files{grid-area:files;margin-top:4px;}
     .grid td.company{grid-area:company;}
     .grid td.position{grid-area:position;}
     .grid td.date{grid-area:date;}
@@ -337,6 +392,7 @@
         <th>Date sent</th>
         <th>Status</th>
         <th>Notes</th>
+        <th>Files</th>
         <th></th>
       </tr>
     </thead>
@@ -349,7 +405,8 @@
     <button class="btn" onclick="addRow()">Add application</button>
   </div>
 
-  <div class="footnote" id="footnote" hidden>Click any cell to edit. Days since sent update automatically.</div>
+  <div class="footnote" id="footnote" hidden>Click any cell to edit. Days since sent update automatically. Attached PDFs stay in this browser on this device and are not uploaded anywhere.</div>
+  <input type="file" id="file-input" accept="application/pdf,.pdf" multiple hidden>
 </div>
 
 <script>
@@ -388,6 +445,80 @@ function getDaysAgoInfo(dateStr){
   return {text:`${diff} days ago`, type: diff>21?'very-old': diff>10?'old':'recent', days:diff};
 }
 
+/* ---- Attached PDFs: the file contents live in IndexedDB, only name/size sit on each row ---- */
+const FILE_DB="job-tracker-files", FILE_STORE="files", MAX_FILE_MB=25;
+let dbPromise=null;
+function openDb(){
+  if(dbPromise) return dbPromise;
+  dbPromise=new Promise((resolve,reject)=>{
+    if(!window.indexedDB){ reject(new Error("IndexedDB unavailable")); return; }
+    const req=indexedDB.open(FILE_DB,1);
+    req.onupgradeneeded=()=>{ req.result.createObjectStore(FILE_STORE,{keyPath:"id"}); };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+  });
+  dbPromise.catch(()=>{ dbPromise=null; });
+  return dbPromise;
+}
+function idbRun(mode,fn){
+  return openDb().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(FILE_STORE,mode);
+    let result;
+    const req=fn(tx.objectStore(FILE_STORE));
+    if(req) req.onsuccess=()=>{ result=req.result; };
+    tx.oncomplete=()=>resolve(result);
+    tx.onerror=()=>reject(tx.error);
+    tx.onabort=()=>reject(tx.error);
+  }));
+}
+const putFile=rec=>idbRun("readwrite",s=>s.put(rec));
+const getFile=id=>idbRun("readonly",s=>s.get(id));
+const deleteFiles=ids=>idbRun("readwrite",s=>{ ids.forEach(id=>s.delete(id)); });
+const clearFiles=()=>idbRun("readwrite",s=>{ s.clear(); });
+function newId(){ return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2); }
+
+let askedPersist=false;
+function askPersist(){
+  if(askedPersist) return; askedPersist=true;
+  try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
+}
+
+function openFile(meta){
+  // Browsers that can show PDFs get a new tab, opened right away so popup blockers accept it as part of the click.
+  // Browsers that can't (e.g. Chrome on Android) download the file under its original name instead.
+  const canView=navigator.pdfViewerEnabled!==false;
+  const w=canView?window.open("","_blank"):null;
+  getFile(meta.id).then(rec=>{
+    if(!rec){ if(w) w.close(); alert("This PDF is no longer stored in this browser. Attach it again to keep a copy here."); return; }
+    const url=URL.createObjectURL(rec.blob);
+    if(w){ w.location.href=url; }
+    else{ const a=document.createElement('a'); a.href=url; a.download=meta.name; document.body.appendChild(a); a.click(); a.remove(); }
+    setTimeout(()=>URL.revokeObjectURL(url),600000);
+  }).catch(()=>{ if(w) w.close(); alert("Couldn't read this PDF from the browser's storage."); });
+}
+
+let attachRow=null;
+const fileInput=document.getElementById('file-input');
+fileInput.addEventListener('change',async()=>{
+  const row=attachRow, files=Array.from(fileInput.files);
+  fileInput.value=""; attachRow=null;
+  if(!row||!files.length) return;
+  const problems=[]; let added=0;
+  for(const f of files){
+    if(!(f.type==="application/pdf"||/\.pdf$/i.test(f.name))){ problems.push(`${f.name}: not a PDF`); continue; }
+    if(f.size>MAX_FILE_MB*1024*1024){ problems.push(`${f.name}: larger than ${MAX_FILE_MB} MB`); continue; }
+    const id=newId();
+    try{
+      await putFile({id,name:f.name,size:f.size,added:Date.now(),blob:new Blob([f],{type:"application/pdf"})});
+    }catch(e){ problems.push(`${f.name}: couldn't be saved in this browser`); continue; }
+    if(!data.includes(row)){ deleteFiles([id]).catch(()=>{}); continue; }  // the row was deleted while saving
+    row.files=(row.files||[]).concat({id,name:f.name,size:f.size});
+    added++;
+  }
+  if(added){ saveData(); render(); askPersist(); }
+  if(problems.length) alert("Some files were skipped:\n"+problems.join("\n"));
+});
+
 let data=loadData();
 const tbody=document.getElementById('tbody');
 
@@ -408,6 +539,7 @@ function render(){
       <td class="date"><div class="date-wrap"><span class="date-main${emptyCls}" contenteditable="true" aria-label="Date sent" data-field="date" data-i="${i}">${esc(dateText)}</span>${daysHtml}</div></td>
       <td class="status-cell"><span class="status-wrap st-${row.status}"><select class="status" aria-label="Status" data-i="${i}">${STATUSES.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}</select></span></td>
       <td class="notes"><span contenteditable="true" aria-label="Notes" data-field="notes" data-i="${i}">${esc(row.notes)}</span></td>
+      <td class="files"><div class="files-wrap">${(row.files||[]).map(f=>`<span class="file"><button class="file-open" data-i="${i}" data-f="${esc(f.id)}" title="${esc(f.name)}">${esc(f.name)}</button><button class="file-del" data-i="${i}" data-f="${esc(f.id)}" aria-label="Remove ${esc(f.name)}">✕</button></span>`).join('')}<button class="attach" data-i="${i}" aria-label="Attach a PDF to ${esc(row.company)}">+ PDF</button></div></td>
       <td class="action"><button class="del" aria-label="Delete application" data-i="${i}">✕</button></td>`;
     tbody.appendChild(tr);
   });
@@ -422,7 +554,32 @@ function render(){
     sel.addEventListener('change',()=>{ data[+sel.dataset.i].status=sel.value; saveData(); render(); });
   });
   tbody.querySelectorAll('.del').forEach(btn=>{
-    btn.addEventListener('click',()=>{ data.splice(+btn.dataset.i,1); saveData(); render(); });
+    btn.addEventListener('click',()=>{
+      const i=+btn.dataset.i;
+      const ids=(data[i].files||[]).map(f=>f.id);
+      if(ids.length && !confirm(`Delete this application and its ${ids.length} attached PDF${ids.length===1?'':'s'}?`)) return;
+      data.splice(i,1); saveData(); render();
+      if(ids.length) deleteFiles(ids).catch(()=>{});
+    });
+  });
+  tbody.querySelectorAll('.attach').forEach(btn=>{
+    btn.addEventListener('click',()=>{ attachRow=data[+btn.dataset.i]; fileInput.click(); });
+  });
+  tbody.querySelectorAll('.file-open').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const meta=(data[+btn.dataset.i].files||[]).find(f=>f.id===btn.dataset.f);
+      if(meta) openFile(meta);
+    });
+  });
+  tbody.querySelectorAll('.file-del').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const row=data[+btn.dataset.i];
+      const meta=(row.files||[]).find(f=>f.id===btn.dataset.f);
+      if(!meta||!confirm(`Remove "${meta.name}" from this application?`)) return;
+      row.files=row.files.filter(f=>f.id!==meta.id);
+      saveData(); render();
+      deleteFiles([meta.id]).catch(()=>{});
+    });
   });
   updateStats();
 }
@@ -443,10 +600,11 @@ function updateStats(){
   document.getElementById('clear-btn').disabled = total===0;
 }
 
-function addRow(){ data.push({company:"New company",position:"Position",date:getTodayString(),status:"Sent",notes:""}); saveData(); render(); }
+function addRow(){ data.push({company:"New company",position:"Position",date:getTodayString(),status:"Sent",notes:"",files:[]}); saveData(); render(); }
 function clearAll(){
-  if(confirm("Clear all applications? This removes everything saved in this browser.")){
+  if(confirm("Clear all applications? This removes everything saved in this browser, including attached PDFs.")){
     data=[]; saveData(); render();
+    clearFiles().catch(()=>{});
   }
 }
 render();
