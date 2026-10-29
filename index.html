@@ -413,7 +413,13 @@
 const STATUSES = ["Sent","Waiting","Interview","Offer","Rejected"];
 const STORAGE_KEY = "job-tracker-data";
 
-const defaultData = [];
+const defaultData = [
+  {company:"PT Urip Gumulya", position:"Admin Sales Support", date:"2026-10-22", status:"Sent", notes:"Google Form, single combined PDF. Semarang.", files:[]},
+  {company:"Staffinc Group", position:"Admin LOTP", date:"2026-10-25", status:"Sent", notes:"Kota Semarang, kontrak. Seleksi 3-5 hari kerja, dihubungi via WhatsApp. SKCK dan SIM C diganti surat pernyataan.", files:[]},
+  {company:"PT Apparel One Indonesia", position:"Management Trainee (MT)", date:"2026-10-26", status:"Sent", notes:"Semarang, Jawa Tengah. Applied via Jobstreet.", files:[]},
+  {company:"PT Multindo Auto Finance", position:"Operation Staff", date:"2026-10-26", status:"Sent", notes:"Applied Via Google From, Info from Instagrma", files:[]},
+  {company:"PT Sekar Laut, Tbk", position:"Admin Data Analyst", date:"2026-10-28", status:"Sent", notes:"Ngaliyan, Semarang. Applied via email.", files:[]}
+];
 
 function loadData(){
   try{
