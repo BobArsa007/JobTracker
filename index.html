@@ -3,388 +3,148 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="light dark">
 <title>Job Applications</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;800&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --ground:#edf0eb;
-    --ink:#15282d;
-    --muted:#55666b;
-    --line:#cbd4cd;
-    --paper:#ffffff;
-    --sent:#2a6f8f;
-    --waiting:#8a5c0a;
-    --interview:#286f43;
-    --offer:#8e3b78;
-    --rejected:#a8412f;
-    --sans:"Barlow","Segoe UI",system-ui,-apple-system,sans-serif;
-    --cond:"Barlow Condensed","Arial Narrow","Roboto Condensed",sans-serif;
-  }
-  *{box-sizing:border-box;}
-  [hidden]{display:none !important;}
-  body{
-    font-family:var(--sans);
-    font-size:15px;
-    line-height:1.4;
-    background:var(--ground);
-    color:var(--ink);
-    margin:0;
-    padding:44px 20px 72px;
-  }
-  .wrap{max-width:1040px;margin:0 auto;}
+:root{
+  --ground:#f4f6f8;--ink:#10243e;--muted:#5a6878;--line:#d5dce4;--rule:#aab6c4;
+  --sent:#1f4e8c;--waiting:#8f5c06;--interview:#0f7a5a;--offer:#8a2f78;--rejected:#b83a2e;
+  --sans:"Schibsted Grotesk","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root{
+  --ground:#0f1722;--ink:#e8edf4;--muted:#93a0b2;--line:#243142;--rule:#3d4e64;
+  --sent:#7ea6e8;--waiting:#e2a84a;--interview:#4cc9a0;--offer:#d680c4;--rejected:#f0796b;
+}}
+*{box-sizing:border-box;}
+[hidden]{display:none !important;}
+body{font:400 15px/1.45 var(--sans);background:var(--ground);color:var(--ink);margin:0;padding:56px 28px 90px;}
+.wrap{max-width:1120px;margin:0 auto;}
 
-  /* Header */
-  .header{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-end;
-    flex-wrap:wrap;
-    gap:16px;
-    margin-bottom:26px;
-  }
-  h1{
-    font-family:var(--cond);
-    font-size:clamp(38px,6vw,58px);
-    font-weight:700;
-    line-height:0.95;
-    letter-spacing:0.005em;
-    margin:0;
-  }
-  .summary{margin:10px 0 0;color:var(--muted);font-size:15px;}
-  .actions{display:flex;gap:8px;}
-  .btn{
-    font:600 14.5px/1 var(--sans);
-    border-radius:6px;
-    padding:11px 18px;
-    cursor:pointer;
-    border:1px solid var(--ink);
-    background:var(--ink);
-    color:var(--ground);
-    transition:background-color .15s,color .15s,border-color .15s;
-  }
-  .btn:hover{background:#0d1b1f;}
-  .btn.quiet{background:transparent;color:var(--ink);border-color:var(--line);}
-  .btn.quiet:hover{border-color:var(--ink);}
-  .btn.quiet:disabled{color:var(--muted);border-color:var(--line);opacity:.55;cursor:default;}
-  .btn:focus-visible,
-  .del:focus-visible,
-  select.status:focus-visible{outline:2px solid var(--sent);outline-offset:2px;}
+.header{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:30px;}
+h1{font:800 clamp(44px,9.5vw,104px)/.9 var(--sans);letter-spacing:-.045em;margin:0;text-wrap:balance;}
+.summary{display:flex;align-items:center;justify-content:center;gap:20px;width:100%;margin:22px 0 0;font-size:17px;color:var(--muted);}
+.summary::before,.summary::after{content:"";flex:1;min-width:16px;border-top:1.5px dotted var(--rule);}
+.actions{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:24px;}
+.btn{font:600 14px/1 var(--sans);border-radius:4px;padding:12px 18px;cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:var(--ground);transition:opacity .15s;}
+.btn:hover{opacity:.85;}
+.btn.quiet{background:transparent;color:var(--ink);border-color:var(--rule);}
+.btn.quiet:hover{opacity:1;border-color:var(--ink);}
+.btn.quiet:disabled{color:var(--muted);opacity:.5;cursor:default;}
+.btn:focus-visible,.chip:focus-visible,.del:focus-visible,select.status:focus-visible,
+.file-open:focus-visible,.file-del:focus-visible,.attach:focus-visible{outline:2px solid var(--sent);outline-offset:3px;}
 
-  /* Status bar */
-  .pipeline{margin-bottom:30px;}
-  .bar{
-    height:12px;
-    border-radius:3px;
-    overflow:hidden;
-    background:var(--line);
-  }
-  .bar-inner{display:flex;width:calc(100% + 3px);height:100%;}
-  .seg{
-    flex:0 1 0;
-    min-width:0;
-    background:var(--c);
-    box-shadow:inset -3px 0 0 var(--ground);
-    transition:flex-grow .35s ease;
-  }
-  .key{
-    display:flex;
-    flex-wrap:wrap;
-    gap:6px 24px;
-    margin:12px 0 0;
-    padding:0;
-    list-style:none;
-    font-size:14px;
-  }
-  .key li{display:inline-flex;align-items:center;gap:7px;}
-  .key li::before{
-    content:"";
-    width:9px;height:9px;
-    border-radius:50%;
-    background:var(--c);
-  }
-  .key b{font-weight:600;font-variant-numeric:tabular-nums;}
+.st-Sent{--c:var(--sent);} .st-Waiting{--c:var(--waiting);} .st-Interview{--c:var(--interview);}
+.st-Offer{--c:var(--offer);} .st-Rejected{--c:var(--rejected);}
 
-  .st-Sent{--c:var(--sent);}
-  .st-Waiting{--c:var(--waiting);}
-  .st-Interview{--c:var(--interview);}
-  .st-Offer{--c:var(--offer);}
-  .st-Rejected{--c:var(--rejected);}
+/* Pipeline bar + legend. The legend markers are the same shapes the lines below end in. */
+.pipeline{margin-bottom:30px;}
+.bar{height:10px;overflow:hidden;background:var(--line);}
+.bar-inner{display:flex;width:calc(100% + 4px);height:100%;}
+.seg{flex:0 1 0;min-width:0;background:var(--c);box-shadow:inset -4px 0 0 var(--ground);transition:flex-grow .5s ease;}
+.key{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 28px;margin:16px 0 0;padding:0;list-style:none;}
+.chip{display:inline-flex;align-items:center;gap:9px;font:500 15px/1.2 var(--sans);padding:4px 0 5px;border:0;border-bottom:2px solid transparent;background:none;color:var(--ink);cursor:pointer;}
+.chip:hover,.chip[aria-pressed="true"]{border-bottom-color:var(--c);}
+.chip b{font-weight:600;font-variant-numeric:tabular-nums;}
+.end,.chip::before{content:"";flex:none;width:12px;height:12px;background:var(--c);border-radius:50%;}
+.st-Waiting .end,.chip.st-Waiting::before{background:var(--ground);border:2.5px solid var(--c);}
+.st-Interview .end,.chip.st-Interview::before{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 28%,transparent);}
+.st-Offer .end,.chip.st-Offer::before{border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);width:15px;height:15px;}
+.st-Rejected .end,.chip.st-Rejected::before{border-radius:0;width:13px;height:13px;clip-path:polygon(20% 0,50% 30%,80% 0,100% 20%,70% 50%,100% 80%,80% 100%,50% 70%,20% 100%,0 80%,30% 50%,0 20%);}
 
-  /* Table */
-  .grid{
-    width:100%;
-    border-collapse:collapse;
-    border-top:2px solid var(--ink);
-    font-size:14.5px;
-  }
-  .grid thead th{
-    text-align:left;
-    font-weight:500;
-    font-size:13px;
-    color:var(--muted);
-    padding:11px 16px 11px 0;
-    border-bottom:1px solid var(--line);
-    white-space:nowrap;
-  }
-  .grid tbody tr{border-bottom:1px solid var(--line);}
-  .grid td{padding:15px 16px 15px 0;vertical-align:top;}
-  .grid td:last-child,
-  .grid thead th:last-child{padding-right:0;}
-  .grid td.company{min-width:170px;font-weight:600;font-size:15px;}
-  .grid td.position{min-width:180px;line-height:1.35;}
-  .grid td.date{min-width:132px;}
-  .grid td.status-cell{min-width:112px;}
-  .grid td.notes{color:var(--muted);max-width:240px;line-height:1.35;font-size:13.5px;}
-  .grid td.action{width:34px;text-align:right;}
+/* Rows */
+.list{list-style:none;margin:0;padding:0;border-top:2px solid var(--ink);}
+.row{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1.9fr) 118px 24px;
+  grid-template-areas:"main line stage del" "notes files files files";gap:10px 30px;align-items:center;padding:22px 0;border-top:1px solid var(--line);}
+.row:first-child{border-top:0;}
+.visitor .row{grid-template-columns:minmax(0,1.05fr) minmax(0,1.9fr) 110px;grid-template-areas:"main line stage";}
+.none{padding:30px 0;color:var(--muted);}
+.main{grid-area:main;display:flex;flex-direction:column;gap:4px;min-width:0;}
+.co{font:600 19px/1.2 var(--sans);letter-spacing:-.01em;}
+.po{color:var(--muted);}
+.stage{grid-area:stage;}
+.notes{grid-area:notes;align-self:start;color:var(--muted);font-size:14px;}
+.files{grid-area:files;align-self:start;}
+.del{grid-area:del;}
 
-  [contenteditable="true"]{
-    outline:none;
-    border-radius:4px;
-    padding:2px 5px;
-    margin:-2px -5px;
-    display:inline-block;
-    min-width:10px;
-    transition:background-color .12s;
-  }
-  [contenteditable="true"]:hover{background:rgba(255,255,255,.75);}
-  [contenteditable="true"]:focus{background:var(--paper);box-shadow:0 0 0 2px var(--sent);}
+/* The line: drawn from the day it was sent to today */
+.line{grid-area:line;display:flex;align-items:center;gap:14px;min-width:0;}
+.when{flex:none;width:5.6rem;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.ago{flex:none;width:4.6rem;text-align:right;font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;}
+.ago.slow{color:var(--waiting);} .ago.late{color:var(--rejected);font-weight:600;}
+.track{position:relative;flex:1;height:20px;margin-right:8px;}
+.track::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1.5px dotted var(--rule);}
+.run{position:absolute;left:0;top:50%;height:3px;margin-top:-1.5px;border-radius:2px;background:var(--c);}
+.end{position:absolute;top:50%;transform:translate(-50%,-50%);}
+.rejected .run{background:repeating-linear-gradient(90deg,var(--c) 0 6px,transparent 6px 10px);opacity:.6;}
+.rejected .co,.rejected .po{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--rejected);text-decoration-thickness:1.5px;}
+.rejected .notes{opacity:.65;}
 
-  .date-wrap{display:flex;flex-direction:column;gap:2px;}
-  .date-main{
-    font-weight:500;
-    font-size:14px;
-    line-height:1.2;
-    font-variant-numeric:tabular-nums;
-  }
-  .date-main.empty{color:var(--muted);font-weight:400;}
-  .days-ago{
-    font-size:12.5px;
-    line-height:1.2;
-    color:var(--muted);
-    font-variant-numeric:tabular-nums;
-  }
-  .days-ago.is-today{color:var(--interview);font-weight:500;}
-  .days-ago.is-old{color:var(--waiting);}
-  .days-ago.is-very-old{color:var(--rejected);}
-  .days-ago.is-future{color:var(--sent);}
+@keyframes draw{from{width:0;}}
+@keyframes move{from{left:0;}}
+.intro .run{animation:draw 1.1s cubic-bezier(.2,.7,.2,1) calc(var(--n)*60ms) both;}
+.intro .end{animation:move 1.1s cubic-bezier(.2,.7,.2,1) calc(var(--n)*60ms) both;}
 
-  /* Status picker */
-  .status-wrap{
-    display:inline-flex;
-    align-items:center;
-    color:var(--c);
-  }
-  .status-wrap::before{
-    content:"";
-    width:8px;height:8px;
-    border-radius:50%;
-    background:currentColor;
-    margin-right:7px;
-    flex:none;
-  }
-  .status-wrap::after{
-    content:"";
-    width:5px;height:5px;
-    border-right:1.5px solid currentColor;
-    border-bottom:1.5px solid currentColor;
-    transform:rotate(45deg) translateY(-1px);
-    margin-left:7px;
-    opacity:.65;
-    pointer-events:none;
-  }
-  select.status{
-    appearance:none;
-    -webkit-appearance:none;
-    background:transparent;
-    border:0;
-    border-radius:4px;
-    color:inherit;
-    font:600 14.5px var(--sans);
-    padding:3px 0;
-    cursor:pointer;
-  }
-  select.status option{color:var(--ink);font-weight:400;}
+[contenteditable="true"]{outline:none;border-radius:4px;padding:2px 6px;margin:-2px -6px;overflow-wrap:anywhere;transition:background-color .12s;}
+[contenteditable="true"]:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);}
+[contenteditable="true"]:focus{background:color-mix(in srgb,var(--ink) 10%,transparent);box-shadow:0 0 0 2px var(--sent);}
+[contenteditable="true"]:empty::before{content:attr(data-ph);color:var(--muted);opacity:.65;}
 
-  .del{
-    background:none;
-    border:0;
-    border-radius:4px;
-    color:var(--muted);
-    font-size:16px;
-    line-height:1;
-    padding:6px 8px;
-    margin:-4px -8px -4px 0;
-    cursor:pointer;
-    opacity:.45;
-    transition:opacity .12s,color .12s;
-  }
-  .grid tbody tr:hover .del,
-  .del:hover,
-  .del:focus-visible{opacity:1;}
-  .del:hover{color:var(--rejected);}
+/* Status */
+.status-wrap{position:relative;display:inline-flex;align-items:center;}
+.status-wrap::after{content:"";position:absolute;right:3px;top:50%;width:5px;height:5px;border-right:1.5px solid var(--c);border-bottom:1.5px solid var(--c);transform:translateY(-70%) rotate(45deg);pointer-events:none;}
+select.status{appearance:none;-webkit-appearance:none;background:transparent;border:0;border-bottom:1.5px solid var(--line);border-radius:0;color:var(--c);font:600 14.5px/1.3 var(--sans);padding:3px 20px 3px 0;cursor:pointer;}
+select.status:hover{border-bottom-color:var(--c);}
+select.status option{color:var(--ink);background:var(--ground);}
+.status-text{font:600 14.5px/1.3 var(--sans);color:var(--c);}
 
-  /* Rejected rows get struck through by hand */
-  tr.rejected td.company,
-  tr.rejected td.position{color:var(--muted);}
-  tr.rejected .scratch-wrap{position:relative;display:inline-block;}
-  tr.rejected .scratch-wrap::before,
-  tr.rejected .scratch-wrap::after{
-    content:"";
-    position:absolute;
-    left:-3%;
-    width:106%;
-    height:1.5px;
-    background:var(--rejected);
-    top:50%;
-    pointer-events:none;
-  }
-  tr.rejected .scratch-wrap::before{transform:translateY(-50%) rotate(-2.5deg);}
-  tr.rejected .scratch-wrap::after{transform:translateY(-50%) rotate(1.5deg);top:56%;}
-  tr.rejected td.date,
-  tr.rejected td.notes{opacity:.65;}
+/* Files and delete */
+.files{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.file{display:inline-flex;align-items:center;max-width:100%;border:1px solid var(--line);border-radius:4px;}
+.file-open{font:500 13px/1.2 var(--sans);color:var(--ink);background:none;border:0;padding:6px 4px 6px 10px;cursor:pointer;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+.file-open:hover{color:var(--sent);text-decoration:underline;}
+.file-del{background:none;border:0;color:var(--muted);font-size:12px;line-height:1;padding:6px 9px 6px 4px;cursor:pointer;opacity:.6;}
+.file-del:hover{color:var(--rejected);opacity:1;}
+.attach{font:600 12.5px/1 var(--sans);color:var(--muted);background:transparent;border:1px dashed var(--rule);border-radius:4px;padding:7px 11px;cursor:pointer;}
+.attach:hover{color:var(--ink);border-color:var(--ink);}
+.del{justify-self:end;background:none;border:0;border-radius:4px;color:var(--muted);font-size:16px;line-height:1;padding:6px 8px;margin-right:-8px;cursor:pointer;opacity:.4;transition:opacity .12s,color .12s;}
+.row:hover .del,.del:hover,.del:focus-visible{opacity:1;}
+.del:hover{color:var(--rejected);}
 
-  /* Attached PDFs */
-  .grid td.files{min-width:150px;max-width:210px;}
-  .files-wrap{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
-  .file{
-    display:inline-flex;
-    align-items:center;
-    max-width:100%;
-    border:1px solid var(--line);
-    border-radius:5px;
-    background:var(--paper);
-  }
-  .file-open{
-    font:500 13px/1.2 var(--sans);
-    color:var(--ink);
-    background:none;
-    border:0;
-    padding:5px 4px 5px 8px;
-    cursor:pointer;
-    max-width:150px;
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-    text-align:left;
-  }
-  .file-open:hover{color:var(--sent);text-decoration:underline;}
-  .file-del{
-    background:none;
-    border:0;
-    color:var(--muted);
-    font-size:12px;
-    line-height:1;
-    padding:6px 7px 6px 3px;
-    cursor:pointer;
-    opacity:.5;
-    transition:opacity .12s,color .12s;
-  }
-  .file-del:hover{color:var(--rejected);opacity:1;}
-  .attach{
-    font:600 12.5px/1 var(--sans);
-    color:var(--muted);
-    background:transparent;
-    border:1px dashed var(--line);
-    border-radius:5px;
-    padding:6px 9px;
-    cursor:pointer;
-    transition:color .12s,border-color .12s;
-  }
-  .attach:hover{color:var(--ink);border-color:var(--ink);}
-  .file-open:focus-visible,
-  .file-del:focus-visible,
-  .attach:focus-visible{outline:2px solid var(--sent);outline-offset:2px;}
+.visitor .actions,.visitor .sync,.visitor .empty-state .btn{display:none;}
+.sync{margin:14px auto 0;font-size:13.5px;color:var(--muted);max-width:60ch;}
+.sync.ok{color:var(--interview);} .sync.err{color:var(--rejected);}
+.empty-state{border-top:2px solid var(--ink);padding:48px 0 12px;text-align:center;}
+.empty-state h2{font:800 36px/1 var(--sans);letter-spacing:-.03em;margin:0 0 12px;}
+.empty-state p{margin:0 auto 24px;max-width:46ch;color:var(--muted);}
+.footnote{font-size:13px;color:var(--muted);margin:20px auto 0;max-width:70ch;text-align:center;}
 
-  /* Visitor (read-only) view: no editing, no files, no buttons */
-  .status-text{font:600 14.5px var(--sans);padding:3px 0;}
-  .visitor .actions{display:none;}
-  .visitor .status-wrap::after{display:none;}
-  .visitor .grid thead th:nth-child(n+5){display:none;}
-  .visitor .empty-state .btn{display:none;}
-  .visitor .sync{display:none;}
-  .sync{margin:6px 0 0;font-size:13.5px;color:var(--muted);max-width:60ch;}
-  .sync.ok{color:var(--interview);}
-  .sync.err{color:var(--rejected);}
-
-  /* Empty state */
-  .empty-state{
-    border-top:2px solid var(--ink);
-    padding:44px 0 12px;
-  }
-  .empty-state h2{
-    font-family:var(--cond);
-    font-size:32px;
-    font-weight:700;
-    line-height:1;
-    margin:0 0 10px;
-  }
-  .empty-state p{margin:0 0 22px;max-width:46ch;color:var(--muted);line-height:1.5;}
-
-  .footnote{font-size:13px;color:var(--muted);margin-top:16px;}
-
-  @media (max-width:760px){
-    body{padding:26px 16px 56px;}
-    .grid,.grid tbody{display:block;}
-    .grid thead{display:none;}
-    .grid tbody tr{
-      display:grid;
-      grid-template-columns:1fr auto;
-      grid-template-areas:
-        "company action"
-        "position position"
-        "date status"
-        "notes notes"
-        "files files";
-      gap:5px 12px;
-      padding:15px 0;
-    }
-    .grid td{display:block;padding:0;}
-    .grid td.company,
-    .grid td.position,
-    .grid td.date,
-    .grid td.status-cell,
-    .grid td.notes,
-    .grid td.files,
-    .grid td.action{min-width:0;max-width:none;width:auto;}
-    .grid td.files{grid-area:files;margin-top:4px;}
-    .grid td.company{grid-area:company;}
-    .grid td.position{grid-area:position;}
-    .grid td.date{grid-area:date;}
-    .grid td.status-cell{grid-area:status;justify-self:end;align-self:start;}
-    .grid td.notes{grid-area:notes;}
-    .grid td.action{grid-area:action;}
-    .del{opacity:.7;}
-    .visitor .grid tbody tr{
-      grid-template-areas:
-        "company company"
-        "position position"
-        "date status";
-    }
-  }
-  @media (prefers-reduced-motion:reduce){
-    *{transition:none !important;}
-  }
+@media (max-width:760px){
+  body{padding:32px 16px 64px;}
+  .row,.visitor .row{grid-template-columns:1fr auto;gap:10px 12px;padding:18px 0;
+    grid-template-areas:"main del" "stage stage" "line line" "notes notes" "files files";}
+  .visitor .row{grid-template-areas:"main stage" "line line";}
+  .del{opacity:.7;}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important;}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="header">
-    <div>
-      <h1>Job applications</h1>
-      <p class="summary" id="summary">Loading…</p>
-      <p class="sync" id="sync-status"></p>
-    </div>
+  <header class="header">
+    <h1>Job applications</h1>
+    <p class="summary" id="summary">Loading…</p>
     <div class="actions">
+      <button class="btn" onclick="addRow()">Add application</button>
       <button class="btn quiet" id="sync-btn" onclick="setupSync()">Site sync</button>
       <button class="btn quiet" id="clear-btn" onclick="clearAll()">Clear all</button>
-      <button class="btn" onclick="addRow()">Add application</button>
     </div>
-  </div>
+    <p class="sync" id="sync-status"></p>
+  </header>
 
-  <div class="pipeline">
+  <section class="pipeline" aria-label="Pipeline">
     <div class="bar" role="img" aria-label="Applications by status">
       <div class="bar-inner">
         <div class="seg st-Sent" id="seg-Sent"></div>
@@ -395,28 +155,15 @@
       </div>
     </div>
     <ul class="key">
-      <li class="st-Sent">Sent <b id="count-Sent">0</b></li>
-      <li class="st-Waiting">Waiting <b id="count-Waiting">0</b></li>
-      <li class="st-Interview">Interview <b id="count-Interview">0</b></li>
-      <li class="st-Offer">Offer <b id="count-Offer">0</b></li>
-      <li class="st-Rejected">Rejected <b id="count-Rejected">0</b></li>
+      <li><button class="chip st-Sent" data-s="Sent" aria-pressed="false">Sent <b id="count-Sent">0</b></button></li>
+      <li><button class="chip st-Waiting" data-s="Waiting" aria-pressed="false">Waiting <b id="count-Waiting">0</b></button></li>
+      <li><button class="chip st-Interview" data-s="Interview" aria-pressed="false">Interview <b id="count-Interview">0</b></button></li>
+      <li><button class="chip st-Offer" data-s="Offer" aria-pressed="false">Offer <b id="count-Offer">0</b></button></li>
+      <li><button class="chip st-Rejected" data-s="Rejected" aria-pressed="false">Rejected <b id="count-Rejected">0</b></button></li>
     </ul>
-  </div>
+  </section>
 
-  <table class="grid" id="grid" hidden>
-    <thead>
-      <tr>
-        <th>Company</th>
-        <th>Position</th>
-        <th>Date sent</th>
-        <th>Status</th>
-        <th>Notes</th>
-        <th>Files</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
+  <ul class="list" id="list" hidden></ul>
 
   <div class="empty-state" id="empty">
     <h2>No applications yet</h2>
@@ -424,12 +171,13 @@
     <button class="btn" onclick="addRow()">Add application</button>
   </div>
 
-  <div class="footnote" id="footnote" hidden>Click any cell to edit. Days since sent update automatically. Attached PDFs stay in this browser on this device and are not uploaded anywhere.</div>
+  <p class="footnote" id="footnote" hidden></p>
   <input type="file" id="file-input" accept="application/pdf,.pdf" multiple hidden>
 </div>
 
 <script>
 const STATUSES = ["Sent","Waiting","Interview","Offer","Rejected"];
+const STAGE = {Sent:1,Waiting:2,Interview:3,Offer:4,Rejected:0};
 const STORAGE_KEY = "job-tracker-data";
 
 /* The public list lives in data.json next to this page: company, position, date and status only.
@@ -437,9 +185,8 @@ const STORAGE_KEY = "job-tracker-data";
 const REPO = "BobArsa007/JobTracker", FILE = "data.json", BRANCH = "main";
 const TOKEN_KEY = "job-tracker-token";
 
-/* Two views. Owner view (editable, PDFs, attach) is switched on per browser by opening the page once
-   with ?owner on the end; ?owner=off switches it off again. Everyone else gets the read-only public list.
-   This is not a lock: the PDFs and edits only ever live in the owner's browser, so there is nothing to protect here. */
+/* Owner view (editable, PDFs) is switched on per browser by opening the page once with ?owner on the end;
+   ?owner=off switches it off again. Everyone else gets the read-only public list. */
 const OWNER_KEY = "job-tracker-owner";
 function resolveOwner(){
   try{
@@ -454,9 +201,9 @@ function resolveOwner(){
 const isOwner = resolveOwner();
 if(!isOwner) document.body.classList.add('visitor');
 
-let loadFailed = false;
+let data=[], loaded=false, loadFailed=false, filter=null;
+const list=document.getElementById('list');
 
-/* The public list, as visitors see it. Only plain text fields are taken from the file, and the status must be a known one. */
 async function fetchPublic(){
   try{
     const r = await fetch(FILE+"?t="+Date.now(), {cache:"no-store"});
@@ -480,8 +227,7 @@ function saveData(){
 function getToken(){ try{ return localStorage.getItem(TOKEN_KEY)||""; }catch(e){ return ""; } }
 function setSync(text,kind){
   const el=document.getElementById('sync-status');
-  el.textContent=text;
-  el.className='sync'+(kind?' '+kind:'');
+  el.textContent=text; el.className='sync'+(kind?' '+kind:'');
 }
 function refreshSyncStatus(){
   setSync(getToken()
@@ -521,11 +267,11 @@ async function publish(){
       if(g.ok){
         const info=await g.json();
         sha=info.sha;
-        if(fromB64(info.content||"")===body){ done=true; setSync(okText,"ok"); break; }   // already the same, nothing to save
+        if(fromB64(info.content||"")===body){ done=true; setSync(okText,"ok"); break; }
       }else if(g.status!==404){ throw apiError(g); }
       const p=await fetch(api,{method:"PUT",headers:{...headers,"Content-Type":"application/json"},body:JSON.stringify({message:"Update applications",content:toB64(body),sha,branch:BRANCH})});
       if(p.ok){ done=true; setSync(okText,"ok"); }
-      else if(p.status===409||p.status===422){ continue; }   // the file changed in between: read it again and retry
+      else if(p.status===409||p.status===422){ continue; }
       else throw apiError(p);
     }
     if(!done) throw new Error("the site file kept changing. Try again.");
@@ -549,26 +295,29 @@ function setupSync(){
   try{ localStorage.setItem(TOKEN_KEY,t); }catch(e){}
   publish();
 }
-function getTodayString(){ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
 
-function getDaysAgoInfo(dateStr){
-  if(!dateStr) return null;
-  const s=dateStr.trim();
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
-  const [y,m,d]=s.split('-').map(Number);
+function getTodayString(){ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
+function daysSince(s){
+  if(!s||!/^\d{4}-\d{2}-\d{2}$/.test(s.trim())) return null;
+  const [y,m,d]=s.trim().split('-').map(Number);
   const sent=new Date(y,m-1,d);
   if(isNaN(sent)) return null;
-  const now=new Date();
-  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
-  const sentMid=new Date(sent.getFullYear(),sent.getMonth(),sent.getDate());
-  const diff=Math.floor((today-sentMid)/86400000);
-  if(diff<0) return {text:`in ${Math.abs(diff)}d`, type:'future'};
-  if(diff===0) return {text:'today', type:'today'};
-  if(diff===1) return {text:'1 day ago', type:'recent'};
-  return {text:`${diff} days ago`, type: diff>21?'very-old': diff>10?'old':'recent', days:diff};
+  const n=new Date();
+  return Math.round((new Date(n.getFullYear(),n.getMonth(),n.getDate())-sent)/86400000);
+}
+function fmtDate(s){
+  if(daysSince(s)===null) return s||'—';
+  const [y,m,d]=s.trim().split('-').map(Number);
+  return new Date(y,m-1,d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:y===new Date().getFullYear()?undefined:'numeric'});
+}
+function summaryText(total){
+  const n=`${total} ${total===1?'application':'applications'} tracked.`;
+  const w=data.filter(r=>r.status==="Sent"||r.status==="Waiting").map(r=>daysSince(r.date)).filter(x=>x!==null);
+  const m=w.length?Math.max(...w):0;
+  return m>=1 ? `${n} Longest wait: ${m} ${m===1?'day':'days'}.` : n;
 }
 
-/* ---- Attached PDFs: the file contents live in IndexedDB, only name/size sit on each row ---- */
+/* ---- Attached PDFs: file contents live in IndexedDB, only name/size sit on each row ---- */
 const FILE_DB="job-tracker-files", FILE_STORE="files", MAX_FILE_MB=25;
 let dbPromise=null;
 function openDb(){
@@ -607,8 +356,7 @@ function askPersist(){
 }
 
 function openFile(meta){
-  // Browsers that can show PDFs get a new tab, opened right away so popup blockers accept it as part of the click.
-  // Browsers that can't (e.g. Chrome on Android) download the file under its original name instead.
+  // Browsers that can show PDFs get a new tab (opened inside the click so popup blockers allow it); others download it.
   const canView=navigator.pdfViewerEnabled!==false;
   const w=canView?window.open("","_blank"):null;
   getFile(meta.id).then(rec=>{
@@ -634,7 +382,7 @@ fileInput.addEventListener('change',async()=>{
     try{
       await putFile({id,name:f.name,size:f.size,added:Date.now(),blob:new Blob([f],{type:"application/pdf"})});
     }catch(e){ problems.push(`${f.name}: couldn't be saved in this browser`); continue; }
-    if(!data.includes(row)){ deleteFiles([id]).catch(()=>{}); continue; }  // the row was deleted while saving
+    if(!data.includes(row)){ deleteFiles([id]).catch(()=>{}); continue; }
     row.files=(row.files||[]).concat({id,name:f.name,size:f.size});
     added++;
   }
@@ -642,51 +390,55 @@ fileInput.addEventListener('change',async()=>{
   if(problems.length) alert("Some files were skipped:\n"+problems.join("\n"));
 });
 
-let data=[];
-let loaded=false;
-const tbody=document.getElementById('tbody');
-
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function render(){
-  tbody.innerHTML="";
+  list.innerHTML="";
+  const ds=data.map(r=>daysSince(r.date)).filter(x=>x!==null&&x>0);
+  const scale=Math.max(14,...ds);
   data.forEach((row,i)=>{
-    const tr=document.createElement('tr');
-    if(row.status==="Rejected") tr.classList.add('rejected');
-    const dInfo=getDaysAgoInfo(row.date);
-    const daysHtml=dInfo?`<span class="days-ago is-${dInfo.type}">${dInfo.text}</span>`:'';
-    const dateText=row.date||'—';
-    const emptyCls=row.date?'':' empty';
-    // Owner view: editable cells, status picker, PDFs, delete. Visitor view: plain text only, and no files are rendered at all.
-    const cell=(field,label,val)=>isOwner
-      ? `<span contenteditable="true" aria-label="${label}" data-field="${field}" data-i="${i}">${esc(val)}</span>`
-      : esc(val);
-    const dateAttrs=isOwner?` contenteditable="true" aria-label="Date sent" data-field="date" data-i="${i}"`:'';
+    if(filter && row.status!==filter) return;
+    const li=document.createElement('li');
+    li.className='row st-'+row.status+(row.status==="Rejected"?' rejected':'');
+    li.style.setProperty('--n',Math.min(i,10));
+    const d=daysSince(row.date);
+    const active=row.status==="Sent"||row.status==="Waiting";
+    // Owner view: editable cells, status picker, notes, PDFs, delete. Visitor view: plain text only.
+    const ed=(field,label,val,cls,ph)=>isOwner
+      ? `<div class="${cls}" contenteditable="true" role="textbox" aria-label="${label}" data-field="${field}" data-i="${i}" data-ph="${ph}">${esc(val)}</div>`
+      : `<div class="${cls}">${esc(val)}</div>`;
+    const when=isOwner ? ed('date','Date sent',row.date,'when','YYYY-MM-DD') : `<div class="when">${esc(fmtDate(row.date))}</div>`;
+    const pct=d===null?0:Math.max(2,Math.min(100,d/scale*100));
+    const ago=d===null?'':d<0?`in ${-d}d`:d===0?'today':d===1?'1 day':`${d} days`;
+    const agoCls=active&&d>21?' late':active&&d>10?' slow':'';
     const statusCell=isOwner
       ? `<select class="status" aria-label="Status" data-i="${i}">${STATUSES.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}</select>`
       : `<span class="status-text">${esc(row.status)}</span>`;
     const ownerCells=isOwner?`
-      <td class="notes">${cell('notes','Notes',row.notes)}</td>
-      <td class="files"><div class="files-wrap">${(row.files||[]).map(f=>`<span class="file"><button class="file-open" data-i="${i}" data-f="${esc(f.id)}" title="${esc(f.name)}">${esc(f.name)}</button><button class="file-del" data-i="${i}" data-f="${esc(f.id)}" aria-label="Remove ${esc(f.name)}">✕</button></span>`).join('')}<button class="attach" data-i="${i}" aria-label="Attach a PDF to ${esc(row.company)}">+ PDF</button></div></td>
-      <td class="action"><button class="del" aria-label="Delete application" data-i="${i}">✕</button></td>`:'';
-    tr.innerHTML=`
-      <td class="company"><span class="scratch-wrap">${cell('company','Company',row.company)}</span></td>
-      <td class="position"><span class="scratch-wrap">${cell('position','Position',row.position)}</span></td>
-      <td class="date"><div class="date-wrap"><span class="date-main${emptyCls}"${dateAttrs}>${esc(dateText)}</span>${daysHtml}</div></td>
-      <td class="status-cell"><span class="status-wrap st-${row.status}">${statusCell}</span></td>${ownerCells}`;
-    tbody.appendChild(tr);
+      ${ed('notes','Notes',row.notes,'notes','Add a note')}
+      <div class="files">${(row.files||[]).map(f=>`<span class="file"><button class="file-open" data-i="${i}" data-f="${esc(f.id)}" title="${esc(f.name)}">${esc(f.name)}</button><button class="file-del" data-i="${i}" data-f="${esc(f.id)}" aria-label="Remove ${esc(f.name)}">✕</button></span>`).join('')}<button class="attach" data-i="${i}" aria-label="Attach a PDF to ${esc(row.company)}">+ PDF</button></div>
+      <button class="del" aria-label="Delete application" data-i="${i}">✕</button>`:'';
+    li.innerHTML=`
+      <div class="main">${ed('company','Company',row.company,'co','Company')}${ed('position','Position',row.position,'po','Position')}</div>
+      <div class="line">${when}<div class="track" aria-hidden="true"><i class="run" style="width:${pct}%"></i><i class="end" style="left:${pct}%"></i></div><span class="ago${agoCls}">${ago}</span></div>
+      <div class="stage"><span class="status-wrap">${statusCell}</span></div>${ownerCells}`;
+    list.appendChild(li);
   });
+  if(filter && !list.children.length){
+    const li=document.createElement('li'); li.className='none'; li.textContent=`No applications with status ${filter}.`; list.appendChild(li);
+  }
 
-  tbody.querySelectorAll('[contenteditable="true"]').forEach(el=>{
+  list.querySelectorAll('[contenteditable="true"]').forEach(el=>{
     el.addEventListener('blur',()=>{
-      const i=+el.dataset.i; const f=el.dataset.field; let v=el.textContent.trim(); if(v==='—') v=''; data[i][f]=v; saveData(); if(f==='date') render();
+      const i=+el.dataset.i, f=el.dataset.field;
+      data[i][f]=el.textContent.trim(); saveData(); if(f==='date') render();
     });
     el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); el.blur(); }});
   });
-  tbody.querySelectorAll('select.status').forEach(sel=>{
+  list.querySelectorAll('select.status').forEach(sel=>{
     sel.addEventListener('change',()=>{ data[+sel.dataset.i].status=sel.value; saveData(); render(); });
   });
-  tbody.querySelectorAll('.del').forEach(btn=>{
+  list.querySelectorAll('.del').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const i=+btn.dataset.i;
       const ids=(data[i].files||[]).map(f=>f.id);
@@ -695,16 +447,16 @@ function render(){
       if(ids.length) deleteFiles(ids).catch(()=>{});
     });
   });
-  tbody.querySelectorAll('.attach').forEach(btn=>{
+  list.querySelectorAll('.attach').forEach(btn=>{
     btn.addEventListener('click',()=>{ attachRow=data[+btn.dataset.i]; fileInput.click(); });
   });
-  tbody.querySelectorAll('.file-open').forEach(btn=>{
+  list.querySelectorAll('.file-open').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const meta=(data[+btn.dataset.i].files||[]).find(f=>f.id===btn.dataset.f);
       if(meta) openFile(meta);
     });
   });
-  tbody.querySelectorAll('.file-del').forEach(btn=>{
+  list.querySelectorAll('.file-del').forEach(btn=>{
     btn.addEventListener('click',()=>{
       const row=data[+btn.dataset.i];
       const meta=(row.files||[]).find(f=>f.id===btn.dataset.f);
@@ -722,23 +474,28 @@ function updateStats(){
   document.getElementById('summary').textContent = !loaded ? 'Loading…'
     : loadFailed ? "Couldn't load the list. Please try again in a minute."
     : total===0 ? 'Nothing tracked yet'
-    : `${total} ${total===1?'application':'applications'} tracked`;
+    : summaryText(total);
   STATUSES.forEach(s=>{
     const n=data.filter(r=>r.status===s).length;
     document.getElementById('count-'+s).textContent=n;
     document.getElementById('seg-'+s).style.flexGrow=n;
   });
-  document.getElementById('grid').hidden = total===0;
+  document.querySelectorAll('.chip').forEach(b=>b.setAttribute('aria-pressed',String(filter===b.dataset.s)));
+  list.hidden = total===0;
   document.getElementById('empty').hidden = total!==0 || !loaded || loadFailed;
   document.getElementById('footnote').hidden = total===0 || !isOwner;
   document.getElementById('clear-btn').disabled = total===0;
 }
 
-function addRow(){ if(!isOwner) return; data.push({company:"New company",position:"Position",date:getTodayString(),status:"Sent",notes:"",files:[]}); saveData(); render(); }
+document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{
+  filter = filter===b.dataset.s ? null : b.dataset.s; render();
+}));
+
+function addRow(){ if(!isOwner) return; filter=null; data.push({company:"New company",position:"Position",date:getTodayString(),status:"Sent",notes:"",files:[]}); saveData(); render(); }
 function clearAll(){
   if(!isOwner) return;
   if(confirm("Clear all applications? This removes everything saved in this browser, including notes and attached PDFs. If Site sync is on, it also empties the public list.")){
-    data=[]; saveData(); render();
+    data=[]; filter=null; saveData(); render();
     clearFiles().catch(()=>{});
   }
 }
@@ -750,18 +507,18 @@ async function init(){
       if(s){ const p=JSON.parse(s); if(Array.isArray(p)&&p.length>0) saved=p; }
     }catch(e){}
     if(saved) data=saved;
-    else{ const pub=await fetchPublic(); data=pub||[]; }   // first time on this browser: start from the public list
+    else{ const pub=await fetchPublic(); data=pub||[]; }
   }else{
     const pub=await fetchPublic();
     if(pub===null) loadFailed=true; else data=pub;
   }
   loaded=true;
+  document.body.classList.add('intro');
   render();
+  setTimeout(()=>document.body.classList.remove('intro'),2200);
 }
 if(isOwner){
-  document.getElementById('footnote').textContent="Owner view: your notes and PDFs stay in this browser and are never published. Visitors see company, position, date and status, which Site sync saves to the site for you.";
-  document.querySelector('#grid thead th:nth-child(5)').textContent="Notes (only you)";
-  document.querySelector('#grid thead th:nth-child(6)').textContent="Files (only you)";
+  document.getElementById('footnote').textContent="Click any cell to edit. Your notes and PDFs stay in this browser and are never published. Visitors see company, position, date and status, which Site sync saves to the site for you.";
   refreshSyncStatus();
 }else{
   document.querySelector('#empty p').textContent="Nothing has been added here yet.";
