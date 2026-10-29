@@ -70,27 +70,17 @@ h1{font:800 clamp(44px,9.5vw,104px)/.9 var(--sans);letter-spacing:-.045em;margin
 .del{grid-area:del;}
 
 /* The line: drawn from the day it was sent to today */
-.line{grid-area:line;display:flex;align-items:center;gap:14px;min-width:0;}
-.when{flex:none;width:6.4rem;white-space:nowrap;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
-.tally{flex:1;min-width:0;height:30px;padding-left:5px;display:flex;align-items:center;overflow:hidden;}
-.tg{position:relative;flex:none;display:inline-flex;align-items:center;gap:4px;height:24px;margin-right:13px;}
-.tg i{display:block;width:2.5px;height:24px;border-radius:2px;background:var(--c);}
-.tg i.x{position:absolute;left:-4px;right:-4px;top:50%;width:auto;height:2.5px;transform:translateY(-50%) rotate(-24deg);}
-.more{color:var(--muted);font-weight:600;}
-.rejected .tg i{opacity:.4;}
-.ago{flex:none;min-width:4.8rem;display:flex;align-items:baseline;justify-content:flex-end;gap:6px;font-variant-numeric:tabular-nums;}
-.ago b{font:800 27px/1 var(--sans);letter-spacing:-.03em;}
-.ago .u{font-size:13.5px;font-weight:500;color:var(--muted);}
+.line{grid-area:line;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;text-align:center;}
+.when{min-width:5rem;white-space:nowrap;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.ago{display:flex;align-items:baseline;justify-content:center;gap:9px;white-space:nowrap;font-variant-numeric:tabular-nums;}
+.ago b{font:800 40px/1 var(--sans);letter-spacing:-.045em;}
+.ago .u{font:500 19px/1 var(--sans);letter-spacing:-.01em;color:var(--muted);}
 .ago.slow b{color:var(--waiting);} .ago.late b{color:var(--rejected);}
 .rejected .co,.rejected .po{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--rejected);text-decoration-thickness:1.5px;}
-.rejected .notes{opacity:.65;}
+.rejected .notes{opacity:.65;} .rejected .line{opacity:.6;}
 
 @keyframes rise{from{opacity:0;transform:translateY(18px);}}
 .intro .row{animation:rise .65s cubic-bezier(.2,.7,.2,1) calc(var(--n)*90ms) both;}
-@keyframes mark{from{transform:scaleY(0);}}
-@keyframes fade{from{opacity:0;}}
-.intro .tg i{transform-origin:50% 100%;animation:mark .3s cubic-bezier(.2,.7,.2,1) calc(var(--n)*90ms + min(var(--k),30)*28ms + 350ms) both;}
-.intro .tg i.x{animation:fade .3s ease-out calc(var(--n)*90ms + min(var(--k),30)*28ms + 350ms) both;}
 
 [contenteditable="true"]{outline:none;border-radius:4px;padding:2px 6px;margin:-2px -6px;overflow-wrap:anywhere;transition:background-color .12s;}
 [contenteditable="true"]:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);}
@@ -409,18 +399,7 @@ function render(){
       ? `<div class="${cls}" contenteditable="true" role="textbox" aria-label="${label}" data-field="${field}" data-i="${i}" data-ph="${ph}">${esc(val)}</div>`
       : `<div class="${cls}">${esc(val)}</div>`;
     const when=isOwner ? ed('date','Date sent',row.date,'when','YYYY-MM-DD') : `<div class="when">${esc(fmtDate(row.date))}</div>`;
-    const ago=d===null?'':d<0?`<span class="u">in ${-d}d</span>`:d===0?'<span class="u">today</span>':`<b>${d}</b><span class="u">${d===1?'day':'days'}</span>`;
-    // Tally marks: one stroke per day, every fifth day strikes through the last four.
-    let marks='',k=0;
-    const cnt=d>0?Math.min(d,40):0;
-    for(let g=0;g*5<cnt;g++){
-      const c=Math.min(5,cnt-g*5);
-      let inner='';
-      for(let j=0;j<Math.min(c,4);j++) inner+=`<i style="--k:${k++}"></i>`;
-      if(c===5) inner+=`<i class="x" style="--k:${k++}"></i>`;
-      marks+=`<span class="tg">${inner}</span>`;
-    }
-    if(d>40) marks+='<span class="more">+</span>';
+    const ago=d===null?'':d<0?`<span class="u">in</span><b>${-d}</b><span class="u">${d===-1?'day':'days'}</span>`:d===0?'<b>today</b>':`<b>${d}</b><span class="u">${d===1?'day':'days'} ago</span>`;
     const agoCls=active&&d>21?' late':active&&d>10?' slow':'';
     const statusCell=isOwner
       ? `<select class="status" aria-label="Status" data-i="${i}">${STATUSES.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}</select>`
@@ -431,7 +410,7 @@ function render(){
       <button class="del" aria-label="Delete application" data-i="${i}">✕</button>`:'';
     li.innerHTML=`
       <div class="main">${ed('company','Company',row.company,'co','Company')}${ed('position','Position',row.position,'po','Position')}</div>
-      <div class="line">${when}<div class="tally" aria-hidden="true">${marks}</div><span class="ago${agoCls}">${ago}</span></div>
+      <div class="line"><span class="ago${agoCls}">${ago}</span>${when}</div>
       <div class="stage"><i class="mk" aria-hidden="true"></i><span class="status-wrap">${statusCell}</span></div>${ownerCells}`;
     list.appendChild(li);
   });
