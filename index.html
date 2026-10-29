@@ -298,6 +298,13 @@
   .file-del:focus-visible,
   .attach:focus-visible{outline:2px solid var(--sent);outline-offset:2px;}
 
+  /* Visitor (read-only) view: no editing, no files, no buttons */
+  .status-text{font:600 14.5px var(--sans);padding:3px 0;}
+  .visitor .actions{display:none;}
+  .visitor .status-wrap::after{display:none;}
+  .visitor .grid thead th:nth-child(n+6){display:none;}
+  .visitor .empty-state .btn{display:none;}
+
   /* Empty state */
   .empty-state{
     border-top:2px solid var(--ink);
@@ -346,6 +353,13 @@
     .grid td.notes{grid-area:notes;}
     .grid td.action{grid-area:action;}
     .del{opacity:.7;}
+    .visitor .grid tbody tr{
+      grid-template-areas:
+        "company company"
+        "position position"
+        "date status"
+        "notes notes";
+    }
   }
   @media (prefers-reduced-motion:reduce){
     *{transition:none !important;}
@@ -360,6 +374,7 @@
       <p class="summary" id="summary">Nothing tracked yet</p>
     </div>
     <div class="actions">
+      <button class="btn quiet" id="copy-btn" onclick="copyForSite()">Copy for site</button>
       <button class="btn quiet" id="clear-btn" onclick="clearAll()">Clear all</button>
       <button class="btn" onclick="addRow()">Add application</button>
     </div>
@@ -421,7 +436,25 @@ const defaultData = [
   {company:"PT Sekar Laut, Tbk", position:"Admin Data Analyst", date:"2026-10-28", status:"Sent", notes:"Ngaliyan, Semarang. Applied via email.", files:[]}
 ];
 
+/* Two views. Owner view (editable, PDFs, attach) is switched on per browser by opening the page once
+   with ?owner on the end; ?owner=off switches it off again. Everyone else gets the read-only public list.
+   This is not a lock: the PDFs and edits only ever live in the owner's browser, so there is nothing to protect here. */
+const OWNER_KEY = "job-tracker-owner";
+function resolveOwner(){
+  try{
+    const p = new URLSearchParams(location.search);
+    if(p.has("owner")){
+      if(p.get("owner")==="off") localStorage.removeItem(OWNER_KEY); else localStorage.setItem(OWNER_KEY,"1");
+      history.replaceState(null,"",location.pathname+location.hash);
+    }
+    return localStorage.getItem(OWNER_KEY)==="1";
+  }catch(e){ return false; }
+}
+const isOwner = resolveOwner();
+if(!isOwner) document.body.classList.add('visitor');
+
 function loadData(){
+  if(!isOwner) return JSON.parse(JSON.stringify(defaultData));
   try{
     const saved = localStorage.getItem(STORAGE_KEY);
     if(saved){
@@ -431,7 +464,7 @@ function loadData(){
   }catch(e){}
   return JSON.parse(JSON.stringify(defaultData));
 }
-function saveData(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
+function saveData(){ if(!isOwner) return; try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
 function getTodayString(){ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
 
 function getDaysAgoInfo(dateStr){
@@ -539,14 +572,23 @@ function render(){
     const daysHtml=dInfo?`<span class="days-ago is-${dInfo.type}">${dInfo.text}</span>`:'';
     const dateText=row.date||'—';
     const emptyCls=row.date?'':' empty';
-    tr.innerHTML=`
-      <td class="company"><span class="scratch-wrap"><span contenteditable="true" aria-label="Company" data-field="company" data-i="${i}">${esc(row.company)}</span></span></td>
-      <td class="position"><span class="scratch-wrap"><span contenteditable="true" aria-label="Position" data-field="position" data-i="${i}">${esc(row.position)}</span></span></td>
-      <td class="date"><div class="date-wrap"><span class="date-main${emptyCls}" contenteditable="true" aria-label="Date sent" data-field="date" data-i="${i}">${esc(dateText)}</span>${daysHtml}</div></td>
-      <td class="status-cell"><span class="status-wrap st-${row.status}"><select class="status" aria-label="Status" data-i="${i}">${STATUSES.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}</select></span></td>
-      <td class="notes"><span contenteditable="true" aria-label="Notes" data-field="notes" data-i="${i}">${esc(row.notes)}</span></td>
+    // Owner view: editable cells, status picker, PDFs, delete. Visitor view: plain text only, and no files are rendered at all.
+    const cell=(field,label,val)=>isOwner
+      ? `<span contenteditable="true" aria-label="${label}" data-field="${field}" data-i="${i}">${esc(val)}</span>`
+      : esc(val);
+    const dateAttrs=isOwner?` contenteditable="true" aria-label="Date sent" data-field="date" data-i="${i}"`:'';
+    const statusCell=isOwner
+      ? `<select class="status" aria-label="Status" data-i="${i}">${STATUSES.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}</select>`
+      : `<span class="status-text">${esc(row.status)}</span>`;
+    const ownerCells=isOwner?`
       <td class="files"><div class="files-wrap">${(row.files||[]).map(f=>`<span class="file"><button class="file-open" data-i="${i}" data-f="${esc(f.id)}" title="${esc(f.name)}">${esc(f.name)}</button><button class="file-del" data-i="${i}" data-f="${esc(f.id)}" aria-label="Remove ${esc(f.name)}">✕</button></span>`).join('')}<button class="attach" data-i="${i}" aria-label="Attach a PDF to ${esc(row.company)}">+ PDF</button></div></td>
-      <td class="action"><button class="del" aria-label="Delete application" data-i="${i}">✕</button></td>`;
+      <td class="action"><button class="del" aria-label="Delete application" data-i="${i}">✕</button></td>`:'';
+    tr.innerHTML=`
+      <td class="company"><span class="scratch-wrap">${cell('company','Company',row.company)}</span></td>
+      <td class="position"><span class="scratch-wrap">${cell('position','Position',row.position)}</span></td>
+      <td class="date"><div class="date-wrap"><span class="date-main${emptyCls}"${dateAttrs}>${esc(dateText)}</span>${daysHtml}</div></td>
+      <td class="status-cell"><span class="status-wrap st-${row.status}">${statusCell}</span></td>
+      <td class="notes">${cell('notes','Notes',row.notes)}</td>${ownerCells}`;
     tbody.appendChild(tr);
   });
 
@@ -602,16 +644,33 @@ function updateStats(){
   });
   document.getElementById('grid').hidden = total===0;
   document.getElementById('empty').hidden = total!==0;
-  document.getElementById('footnote').hidden = total===0;
+  document.getElementById('footnote').hidden = total===0 || !isOwner;
   document.getElementById('clear-btn').disabled = total===0;
+  document.getElementById('copy-btn').disabled = total===0;
 }
 
-function addRow(){ data.push({company:"New company",position:"Position",date:getTodayString(),status:"Sent",notes:"",files:[]}); saveData(); render(); }
+function copyForSite(){
+  if(!isOwner) return;
+  // The list the public page should show: no PDFs. Anything pasted into the repo becomes public, so check the notes first.
+  const rows=data.map(r=>({company:r.company,position:r.position,date:r.date,status:r.status,notes:r.notes,files:[]}));
+  const text=rows.map(r=>"  "+JSON.stringify(r)).join(",\n");
+  const done=()=>alert("Copied the list for the public page (without PDFs). Read the notes before publishing, because anything in the repo is public.");
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(()=>prompt("Copy this list:",text));
+  else prompt("Copy this list:",text);
+}
+
+function addRow(){ if(!isOwner) return; data.push({company:"New company",position:"Position",date:getTodayString(),status:"Sent",notes:"",files:[]}); saveData(); render(); }
 function clearAll(){
+  if(!isOwner) return;
   if(confirm("Clear all applications? This removes everything saved in this browser, including attached PDFs.")){
     data=[]; saveData(); render();
     clearFiles().catch(()=>{});
   }
+}
+if(isOwner){
+  document.getElementById('footnote').textContent="Owner view: only this browser sees your edits and PDFs. Visitors get a read-only list. Click any cell to edit; days since sent update automatically.";
+}else{
+  document.querySelector('#empty p').textContent="Nothing has been added here yet.";
 }
 render();
 </script>
