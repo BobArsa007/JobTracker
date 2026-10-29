@@ -302,8 +302,12 @@
   .status-text{font:600 14.5px var(--sans);padding:3px 0;}
   .visitor .actions{display:none;}
   .visitor .status-wrap::after{display:none;}
-  .visitor .grid thead th:nth-child(n+6){display:none;}
+  .visitor .grid thead th:nth-child(n+5){display:none;}
   .visitor .empty-state .btn{display:none;}
+  .visitor .sync{display:none;}
+  .sync{margin:6px 0 0;font-size:13.5px;color:var(--muted);max-width:60ch;}
+  .sync.ok{color:var(--interview);}
+  .sync.err{color:var(--rejected);}
 
   /* Empty state */
   .empty-state{
@@ -357,8 +361,7 @@
       grid-template-areas:
         "company company"
         "position position"
-        "date status"
-        "notes notes";
+        "date status";
     }
   }
   @media (prefers-reduced-motion:reduce){
@@ -371,10 +374,11 @@
   <div class="header">
     <div>
       <h1>Job applications</h1>
-      <p class="summary" id="summary">Nothing tracked yet</p>
+      <p class="summary" id="summary">Loading…</p>
+      <p class="sync" id="sync-status"></p>
     </div>
     <div class="actions">
-      <button class="btn quiet" id="copy-btn" onclick="copyForSite()">Copy for site</button>
+      <button class="btn quiet" id="sync-btn" onclick="setupSync()">Site sync</button>
       <button class="btn quiet" id="clear-btn" onclick="clearAll()">Clear all</button>
       <button class="btn" onclick="addRow()">Add application</button>
     </div>
@@ -428,13 +432,10 @@
 const STATUSES = ["Sent","Waiting","Interview","Offer","Rejected"];
 const STORAGE_KEY = "job-tracker-data";
 
-const defaultData = [
-  {company:"PT Urip Gumulya", position:"Admin Sales Support", date:"2026-10-22", status:"Sent", notes:"Google Form, single combined PDF. Semarang.", files:[]},
-  {company:"Staffinc Group", position:"Admin LOTP", date:"2026-10-25", status:"Sent", notes:"Kota Semarang, kontrak. Seleksi 3-5 hari kerja, dihubungi via WhatsApp. SKCK dan SIM C diganti surat pernyataan.", files:[]},
-  {company:"PT Apparel One Indonesia", position:"Management Trainee (MT)", date:"2026-10-26", status:"Sent", notes:"Semarang, Jawa Tengah. Applied via Jobstreet.", files:[]},
-  {company:"PT Multindo Auto Finance", position:"Operation Staff", date:"2026-10-26", status:"Sent", notes:"Applied Via Google From, Info from Instagrma", files:[]},
-  {company:"PT Sekar Laut, Tbk", position:"Admin Data Analyst", date:"2026-10-28", status:"Sent", notes:"Ngaliyan, Semarang. Applied via email.", files:[]}
-];
+/* The public list lives in data.json next to this page: company, position, date and status only.
+   Notes and PDFs never go there. In the owner view, "Site sync" saves that file to GitHub automatically. */
+const REPO = "BobArsa007/JobTracker", FILE = "data.json", BRANCH = "main";
+const TOKEN_KEY = "job-tracker-token";
 
 /* Two views. Owner view (editable, PDFs, attach) is switched on per browser by opening the page once
    with ?owner on the end; ?owner=off switches it off again. Everyone else gets the read-only public list.
@@ -453,18 +454,101 @@ function resolveOwner(){
 const isOwner = resolveOwner();
 if(!isOwner) document.body.classList.add('visitor');
 
-function loadData(){
-  if(!isOwner) return JSON.parse(JSON.stringify(defaultData));
+let loadFailed = false;
+
+/* The public list, as visitors see it. Only plain text fields are taken from the file, and the status must be a known one. */
+async function fetchPublic(){
   try{
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if(saved){
-      const parsed = JSON.parse(saved);
-      if(Array.isArray(parsed) && parsed.length>0) return parsed;
-    }
-  }catch(e){}
-  return JSON.parse(JSON.stringify(defaultData));
+    const r = await fetch(FILE+"?t="+Date.now(), {cache:"no-store"});
+    if(!r.ok) return null;
+    const j = await r.json();
+    if(!Array.isArray(j)) return null;
+    return j.map(x=>({
+      company:String((x&&x.company)||""), position:String((x&&x.position)||""), date:String((x&&x.date)||""),
+      status:STATUSES.includes(x&&x.status)?x.status:"Sent", notes:"", files:[]
+    }));
+  }catch(e){ return null; }
 }
-function saveData(){ if(!isOwner) return; try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
+
+function saveData(){
+  if(!isOwner) return;
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){}
+  schedulePublish();
+}
+
+/* ---- Site sync (owner only): saves the public list to data.json in the GitHub project ---- */
+function getToken(){ try{ return localStorage.getItem(TOKEN_KEY)||""; }catch(e){ return ""; } }
+function setSync(text,kind){
+  const el=document.getElementById('sync-status');
+  el.textContent=text;
+  el.className='sync'+(kind?' '+kind:'');
+}
+function refreshSyncStatus(){
+  setSync(getToken()
+    ? 'Site sync is on: what you change here is saved to the public list automatically.'
+    : 'Site sync is off. Click "Site sync" so your changes show for everyone.');
+}
+function publicRows(){ return data.map(r=>({company:r.company||"",position:r.position||"",date:r.date||"",status:r.status})); }
+function toB64(str){ const bytes=new TextEncoder().encode(str); let bin=""; bytes.forEach(b=>{ bin+=String.fromCharCode(b); }); return btoa(bin); }
+function fromB64(b64){ const bin=atob(b64.replace(/\s/g,"")); return new TextDecoder().decode(Uint8Array.from(bin,c=>c.charCodeAt(0))); }
+function apiError(res){
+  if(res.status===401) return new Error("the GitHub key was rejected. Click Site sync and paste a new one.");
+  if(res.status===403||res.status===404) return new Error("the GitHub key can't write to this project. It needs Contents: Read and write for JobTracker.");
+  return new Error("GitHub answered with error "+res.status+".");
+}
+let publishTimer=null, publishing=false, publishAgain=false;
+function schedulePublish(){
+  if(!isOwner||!getToken()) return;
+  clearTimeout(publishTimer);
+  setSync("Changes will be saved to the site in a moment…");
+  publishTimer=setTimeout(publish,1500);
+}
+async function publish(){
+  const token=getToken();
+  if(!isOwner||!token) return;
+  if(publishing){ publishAgain=true; return; }
+  publishing=true;
+  setSync("Saving to the site…");
+  const api=`https://api.github.com/repos/${REPO}/contents/${FILE}`;
+  const headers={Authorization:"Bearer "+token,Accept:"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};
+  const body=JSON.stringify(publicRows(),null,2)+"\n";
+  const okText="Saved to the site. Visitors see it within a minute or two.";
+  try{
+    let done=false;
+    for(let attempt=0; attempt<3 && !done; attempt++){
+      let sha;
+      const g=await fetch(`${api}?ref=${BRANCH}&t=${Date.now()}`,{headers,cache:"no-store"});
+      if(g.ok){
+        const info=await g.json();
+        sha=info.sha;
+        if(fromB64(info.content||"")===body){ done=true; setSync(okText,"ok"); break; }   // already the same, nothing to save
+      }else if(g.status!==404){ throw apiError(g); }
+      const p=await fetch(api,{method:"PUT",headers:{...headers,"Content-Type":"application/json"},body:JSON.stringify({message:"Update applications",content:toB64(body),sha,branch:BRANCH})});
+      if(p.ok){ done=true; setSync(okText,"ok"); }
+      else if(p.status===409||p.status===422){ continue; }   // the file changed in between: read it again and retry
+      else throw apiError(p);
+    }
+    if(!done) throw new Error("the site file kept changing. Try again.");
+  }catch(e){
+    setSync("Could not save to the site: "+(e&&e.message?e.message:"no connection."),"err");
+  }finally{
+    publishing=false;
+    if(publishAgain){ publishAgain=false; schedulePublish(); }
+  }
+}
+function setupSync(){
+  if(!isOwner) return;
+  const cur=getToken();
+  const v=prompt(cur
+    ? 'A GitHub key is already saved in this browser. Paste a new one to replace it, or type OFF to turn Site sync off.'
+    : 'Paste your GitHub key here. It is kept in this browser only.');
+  if(v===null) return;
+  const t=v.trim();
+  if(!t) return;
+  if(t.toUpperCase()==="OFF"){ try{ localStorage.removeItem(TOKEN_KEY); }catch(e){} refreshSyncStatus(); return; }
+  try{ localStorage.setItem(TOKEN_KEY,t); }catch(e){}
+  publish();
+}
 function getTodayString(){ const n=new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`; }
 
 function getDaysAgoInfo(dateStr){
@@ -558,7 +642,8 @@ fileInput.addEventListener('change',async()=>{
   if(problems.length) alert("Some files were skipped:\n"+problems.join("\n"));
 });
 
-let data=loadData();
+let data=[];
+let loaded=false;
 const tbody=document.getElementById('tbody');
 
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -581,14 +666,14 @@ function render(){
       ? `<select class="status" aria-label="Status" data-i="${i}">${STATUSES.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}</select>`
       : `<span class="status-text">${esc(row.status)}</span>`;
     const ownerCells=isOwner?`
+      <td class="notes">${cell('notes','Notes',row.notes)}</td>
       <td class="files"><div class="files-wrap">${(row.files||[]).map(f=>`<span class="file"><button class="file-open" data-i="${i}" data-f="${esc(f.id)}" title="${esc(f.name)}">${esc(f.name)}</button><button class="file-del" data-i="${i}" data-f="${esc(f.id)}" aria-label="Remove ${esc(f.name)}">✕</button></span>`).join('')}<button class="attach" data-i="${i}" aria-label="Attach a PDF to ${esc(row.company)}">+ PDF</button></div></td>
       <td class="action"><button class="del" aria-label="Delete application" data-i="${i}">✕</button></td>`:'';
     tr.innerHTML=`
       <td class="company"><span class="scratch-wrap">${cell('company','Company',row.company)}</span></td>
       <td class="position"><span class="scratch-wrap">${cell('position','Position',row.position)}</span></td>
       <td class="date"><div class="date-wrap"><span class="date-main${emptyCls}"${dateAttrs}>${esc(dateText)}</span>${daysHtml}</div></td>
-      <td class="status-cell"><span class="status-wrap st-${row.status}">${statusCell}</span></td>
-      <td class="notes">${cell('notes','Notes',row.notes)}</td>${ownerCells}`;
+      <td class="status-cell"><span class="status-wrap st-${row.status}">${statusCell}</span></td>${ownerCells}`;
     tbody.appendChild(tr);
   });
 
@@ -634,8 +719,9 @@ function render(){
 
 function updateStats(){
   const total=data.length;
-  document.getElementById('summary').textContent = total===0
-    ? 'Nothing tracked yet'
+  document.getElementById('summary').textContent = !loaded ? 'Loading…'
+    : loadFailed ? "Couldn't load the list. Please try again in a minute."
+    : total===0 ? 'Nothing tracked yet'
     : `${total} ${total===1?'application':'applications'} tracked`;
   STATUSES.forEach(s=>{
     const n=data.filter(r=>r.status===s).length;
@@ -643,36 +729,45 @@ function updateStats(){
     document.getElementById('seg-'+s).style.flexGrow=n;
   });
   document.getElementById('grid').hidden = total===0;
-  document.getElementById('empty').hidden = total!==0;
+  document.getElementById('empty').hidden = total!==0 || !loaded || loadFailed;
   document.getElementById('footnote').hidden = total===0 || !isOwner;
   document.getElementById('clear-btn').disabled = total===0;
-  document.getElementById('copy-btn').disabled = total===0;
-}
-
-function copyForSite(){
-  if(!isOwner) return;
-  // The list the public page should show: no PDFs. Anything pasted into the repo becomes public, so check the notes first.
-  const rows=data.map(r=>({company:r.company,position:r.position,date:r.date,status:r.status,notes:r.notes,files:[]}));
-  const text=rows.map(r=>"  "+JSON.stringify(r)).join(",\n");
-  const done=()=>alert("Copied the list for the public page (without PDFs). Read the notes before publishing, because anything in the repo is public.");
-  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(()=>prompt("Copy this list:",text));
-  else prompt("Copy this list:",text);
 }
 
 function addRow(){ if(!isOwner) return; data.push({company:"New company",position:"Position",date:getTodayString(),status:"Sent",notes:"",files:[]}); saveData(); render(); }
 function clearAll(){
   if(!isOwner) return;
-  if(confirm("Clear all applications? This removes everything saved in this browser, including attached PDFs.")){
+  if(confirm("Clear all applications? This removes everything saved in this browser, including notes and attached PDFs. If Site sync is on, it also empties the public list.")){
     data=[]; saveData(); render();
     clearFiles().catch(()=>{});
   }
 }
+async function init(){
+  if(isOwner){
+    let saved=null;
+    try{
+      const s=localStorage.getItem(STORAGE_KEY);
+      if(s){ const p=JSON.parse(s); if(Array.isArray(p)&&p.length>0) saved=p; }
+    }catch(e){}
+    if(saved) data=saved;
+    else{ const pub=await fetchPublic(); data=pub||[]; }   // first time on this browser: start from the public list
+  }else{
+    const pub=await fetchPublic();
+    if(pub===null) loadFailed=true; else data=pub;
+  }
+  loaded=true;
+  render();
+}
 if(isOwner){
-  document.getElementById('footnote').textContent="Owner view: only this browser sees your edits and PDFs. Visitors get a read-only list. Click any cell to edit; days since sent update automatically.";
+  document.getElementById('footnote').textContent="Owner view: your notes and PDFs stay in this browser and are never published. Visitors see company, position, date and status, which Site sync saves to the site for you.";
+  document.querySelector('#grid thead th:nth-child(5)').textContent="Notes (only you)";
+  document.querySelector('#grid thead th:nth-child(6)').textContent="Files (only you)";
+  refreshSyncStatus();
 }else{
   document.querySelector('#empty p').textContent="Nothing has been added here yet.";
 }
 render();
+init();
 </script>
 </body>
 </html>
