@@ -48,11 +48,11 @@ h1{font:800 clamp(44px,9.5vw,104px)/.9 var(--sans);letter-spacing:-.045em;margin
 .chip{display:inline-flex;align-items:center;gap:9px;font:500 15px/1.2 var(--sans);padding:4px 0 5px;border:0;border-bottom:2px solid transparent;background:none;color:var(--ink);cursor:pointer;}
 .chip:hover,.chip[aria-pressed="true"]{border-bottom-color:var(--c);}
 .chip b{font-weight:600;font-variant-numeric:tabular-nums;}
-.end,.chip::before{content:"";flex:none;width:12px;height:12px;background:var(--c);border-radius:50%;}
-.st-Waiting .end,.chip.st-Waiting::before{background:var(--ground);border:2.5px solid var(--c);}
-.st-Interview .end,.chip.st-Interview::before{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 28%,transparent);}
-.st-Offer .end,.chip.st-Offer::before{border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);width:15px;height:15px;}
-.st-Rejected .end,.chip.st-Rejected::before{border-radius:0;width:13px;height:13px;clip-path:polygon(20% 0,50% 30%,80% 0,100% 20%,70% 50%,100% 80%,80% 100%,50% 70%,20% 100%,0 80%,30% 50%,0 20%);}
+.mk,.chip::before{content:"";flex:none;width:12px;height:12px;background:var(--c);border-radius:50%;}
+.st-Waiting .mk,.chip.st-Waiting::before{background:var(--ground);border:2.5px solid var(--c);}
+.st-Interview .mk,.chip.st-Interview::before{box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 28%,transparent);}
+.st-Offer .mk,.chip.st-Offer::before{border-radius:0;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);width:15px;height:15px;}
+.st-Rejected .mk,.chip.st-Rejected::before{border-radius:0;width:13px;height:13px;clip-path:polygon(20% 0,50% 30%,80% 0,100% 20%,70% 50%,100% 80%,80% 100%,50% 70%,20% 100%,0 80%,30% 50%,0 20%);}
 
 /* Rows */
 .list{list-style:none;margin:0;padding:0;border-top:2px solid var(--ink);}
@@ -64,7 +64,7 @@ h1{font:800 clamp(44px,9.5vw,104px)/.9 var(--sans);letter-spacing:-.045em;margin
 .main{grid-area:main;display:flex;flex-direction:column;gap:4px;min-width:0;}
 .co{font:600 19px/1.2 var(--sans);letter-spacing:-.01em;}
 .po{color:var(--muted);}
-.stage{grid-area:stage;}
+.stage{grid-area:stage;display:flex;align-items:center;gap:10px;}
 .notes{grid-area:notes;align-self:start;color:var(--muted);font-size:14px;}
 .files{grid-area:files;align-self:start;}
 .del{grid-area:del;}
@@ -72,22 +72,25 @@ h1{font:800 clamp(44px,9.5vw,104px)/.9 var(--sans);letter-spacing:-.045em;margin
 /* The line: drawn from the day it was sent to today */
 .line{grid-area:line;display:flex;align-items:center;gap:14px;min-width:0;}
 .when{flex:none;width:6.4rem;white-space:nowrap;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums;}
-.ago{flex:none;width:4.6rem;text-align:right;font-size:13.5px;font-weight:500;font-variant-numeric:tabular-nums;}
-.ago.slow{color:var(--waiting);} .ago.late{color:var(--rejected);font-weight:600;}
-.track{position:relative;flex:1;height:20px;margin-right:8px;}
-.track::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1.5px dotted var(--rule);}
-.run{position:absolute;left:0;top:50%;height:3px;margin-top:-1.5px;border-radius:2px;background:var(--c);}
-.end{position:absolute;top:50%;transform:translate(-50%,-50%);}
-.rejected .run{background:repeating-linear-gradient(90deg,var(--c) 0 6px,transparent 6px 10px);opacity:.6;}
+.tally{flex:1;min-width:0;height:30px;padding-left:5px;display:flex;align-items:center;overflow:hidden;}
+.tg{position:relative;flex:none;display:inline-flex;align-items:center;gap:4px;height:24px;margin-right:13px;}
+.tg i{display:block;width:2.5px;height:24px;border-radius:2px;background:var(--c);}
+.tg i.x{position:absolute;left:-4px;right:-4px;top:50%;width:auto;height:2.5px;transform:translateY(-50%) rotate(-24deg);}
+.more{color:var(--muted);font-weight:600;}
+.rejected .tg i{opacity:.4;}
+.ago{flex:none;min-width:4.8rem;display:flex;align-items:baseline;justify-content:flex-end;gap:6px;font-variant-numeric:tabular-nums;}
+.ago b{font:800 27px/1 var(--sans);letter-spacing:-.03em;}
+.ago .u{font-size:13.5px;font-weight:500;color:var(--muted);}
+.ago.slow b{color:var(--waiting);} .ago.late b{color:var(--rejected);}
 .rejected .co,.rejected .po{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--rejected);text-decoration-thickness:1.5px;}
 .rejected .notes{opacity:.65;}
 
-@keyframes draw{from{width:0;}}
-@keyframes move{from{left:0;}}
 @keyframes rise{from{opacity:0;transform:translateY(18px);}}
 .intro .row{animation:rise .65s cubic-bezier(.2,.7,.2,1) calc(var(--n)*90ms) both;}
-.intro .run{animation:draw 1.2s cubic-bezier(.2,.7,.2,1) calc(var(--n)*90ms + 350ms) both;}
-.intro .end{animation:move 1.2s cubic-bezier(.2,.7,.2,1) calc(var(--n)*90ms + 350ms) both;}
+@keyframes mark{from{transform:scaleY(0);}}
+@keyframes fade{from{opacity:0;}}
+.intro .tg i{transform-origin:50% 100%;animation:mark .3s cubic-bezier(.2,.7,.2,1) calc(var(--n)*90ms + min(var(--k),30)*28ms + 350ms) both;}
+.intro .tg i.x{animation:fade .3s ease-out calc(var(--n)*90ms + min(var(--k),30)*28ms + 350ms) both;}
 
 [contenteditable="true"]{outline:none;border-radius:4px;padding:2px 6px;margin:-2px -6px;overflow-wrap:anywhere;transition:background-color .12s;}
 [contenteditable="true"]:hover{background:color-mix(in srgb,var(--ink) 7%,transparent);}
@@ -121,7 +124,6 @@ select.status option{color:var(--ink);background:var(--ground);}
 .empty-state{border-top:2px solid var(--ink);padding:48px 0 12px;text-align:center;}
 .empty-state h2{font:800 36px/1 var(--sans);letter-spacing:-.03em;margin:0 0 12px;}
 .empty-state p{margin:0 auto 24px;max-width:46ch;color:var(--muted);}
-.footnote{font-size:13px;color:var(--muted);margin:20px auto 0;max-width:70ch;text-align:center;}
 
 @media (max-width:760px){
   body{padding:32px 16px 64px;}
@@ -173,7 +175,6 @@ select.status option{color:var(--ink);background:var(--ground);}
     <button class="btn" onclick="addRow()">Add application</button>
   </div>
 
-  <p class="footnote" id="footnote" hidden></p>
   <input type="file" id="file-input" accept="application/pdf,.pdf" multiple hidden>
 </div>
 
@@ -396,8 +397,6 @@ function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').repla
 
 function render(){
   list.innerHTML="";
-  const ds=data.map(r=>daysSince(r.date)).filter(x=>x!==null&&x>0);
-  const scale=Math.max(14,...ds);
   data.forEach((row,i)=>{
     if(filter && row.status!==filter) return;
     const li=document.createElement('li');
@@ -410,8 +409,18 @@ function render(){
       ? `<div class="${cls}" contenteditable="true" role="textbox" aria-label="${label}" data-field="${field}" data-i="${i}" data-ph="${ph}">${esc(val)}</div>`
       : `<div class="${cls}">${esc(val)}</div>`;
     const when=isOwner ? ed('date','Date sent',row.date,'when','YYYY-MM-DD') : `<div class="when">${esc(fmtDate(row.date))}</div>`;
-    const pct=d===null?0:Math.max(2,Math.min(100,d/scale*100));
-    const ago=d===null?'':d<0?`in ${-d}d`:d===0?'today':d===1?'1 day':`${d} days`;
+    const ago=d===null?'':d<0?`<span class="u">in ${-d}d</span>`:d===0?'<span class="u">today</span>':`<b>${d}</b><span class="u">${d===1?'day':'days'}</span>`;
+    // Tally marks: one stroke per day, every fifth day strikes through the last four.
+    let marks='',k=0;
+    const cnt=d>0?Math.min(d,40):0;
+    for(let g=0;g*5<cnt;g++){
+      const c=Math.min(5,cnt-g*5);
+      let inner='';
+      for(let j=0;j<Math.min(c,4);j++) inner+=`<i style="--k:${k++}"></i>`;
+      if(c===5) inner+=`<i class="x" style="--k:${k++}"></i>`;
+      marks+=`<span class="tg">${inner}</span>`;
+    }
+    if(d>40) marks+='<span class="more">+</span>';
     const agoCls=active&&d>21?' late':active&&d>10?' slow':'';
     const statusCell=isOwner
       ? `<select class="status" aria-label="Status" data-i="${i}">${STATUSES.map(s=>`<option value="${s}" ${s===row.status?'selected':''}>${s}</option>`).join('')}</select>`
@@ -422,8 +431,8 @@ function render(){
       <button class="del" aria-label="Delete application" data-i="${i}">✕</button>`:'';
     li.innerHTML=`
       <div class="main">${ed('company','Company',row.company,'co','Company')}${ed('position','Position',row.position,'po','Position')}</div>
-      <div class="line">${when}<div class="track" aria-hidden="true"><i class="run" style="width:${pct}%"></i><i class="end" style="left:${pct}%"></i></div><span class="ago${agoCls}">${ago}</span></div>
-      <div class="stage"><span class="status-wrap">${statusCell}</span></div>${ownerCells}`;
+      <div class="line">${when}<div class="tally" aria-hidden="true">${marks}</div><span class="ago${agoCls}">${ago}</span></div>
+      <div class="stage"><i class="mk" aria-hidden="true"></i><span class="status-wrap">${statusCell}</span></div>${ownerCells}`;
     list.appendChild(li);
   });
   if(filter && !list.children.length){
@@ -485,7 +494,6 @@ function updateStats(){
   document.querySelectorAll('.chip').forEach(b=>b.setAttribute('aria-pressed',String(filter===b.dataset.s)));
   list.hidden = total===0;
   document.getElementById('empty').hidden = total!==0 || !loaded || loadFailed;
-  document.getElementById('footnote').hidden = total===0 || !isOwner;
   document.getElementById('clear-btn').disabled = total===0;
 }
 
@@ -520,7 +528,6 @@ async function init(){
   setTimeout(()=>document.body.classList.remove('intro'),3400);
 }
 if(isOwner){
-  document.getElementById('footnote').textContent="Click any cell to edit. Your notes and PDFs stay in this browser and are never published. Visitors see company, position, date and status, which Site sync saves to the site for you.";
   refreshSyncStatus();
 }else{
   document.querySelector('#empty p').textContent="Nothing has been added here yet.";
