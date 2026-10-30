@@ -28,5 +28,11 @@
     "position": "Admin Data Analyst",
     "date": "2026-10-28",
     "status": "Sent"
+  },
+  {
+    "company": "New company",
+    "position": "Position",
+    "date": "2026-10-30",
+    "status": "Sent"
   }
 ]
