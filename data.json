@@ -40,5 +40,11 @@
     "position": "Surveyor Mapping (Drone & LiDAR)",
     "date": "2026-11-04",
     "status": "Sent"
+  },
+  {
+    "company": "New company",
+    "position": "Position",
+    "date": "2026-11-05",
+    "status": "Sent"
   }
 ]
