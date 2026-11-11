@@ -46,5 +46,11 @@
     "position": "Surveyor / Analis SIG",
     "date": "2026-11-05",
     "status": "Sent"
+  },
+  {
+    "company": "New company",
+    "position": "Position",
+    "date": "2026-11-11",
+    "status": "Sent"
   }
 ]
